@@ -14,12 +14,12 @@ exports.post = function(request, response) {
         body.transactions === undefined) {
             response.send(statusCodes.BAD_REQUEST);
     }
-    processClientChanges("Categories", body.categories, request);
-    processClientChanges("Accounts", body.acounts, request);
-    processClientChanges("AuthorizedUsers", body.authorizedusers, request);
-    processClientChanges("Budgets", body.budgets, request);
-    processClientChanges("Goas", body.goals, request);
-    processClientChanges("Transactions", body.transactions, request);
+    processClientChanges("Categories", "CategoryId", body.categories, request);
+    processClientChanges("Accounts", "AccountId", body.acounts, request);
+    processClientChanges("AuthorizedUsers", "AuthorizedUserId", body.authorizedusers, request);
+    processClientChanges("Budgets", "BudgetId", body.budgets, request);
+    processClientChanges("Goals", "GoalId",body.goals, request);
+    processClientChanges("Transactions", "TransactionId", body.transactions, request);
        
     response.send(statusCodes.OK, { message : 'Hello World!' });
     } catch(e) {
@@ -31,10 +31,9 @@ function isUserAuthorized() {
     return true;
 }
 
-function processClientChanges(tableName, items, request) {
+function processClientChanges(tableName, idField, items, request) {
     console.log("Processing client changes for table: " + tableName);
     var table = request.service.tables.getTable(tableName);
-    var idField = tableName + "Id";
     console.log("Key Field Name = " + idField);
     var serverChanges = [];
     var count = 0;
