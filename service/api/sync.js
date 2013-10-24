@@ -18,16 +18,24 @@ exports.post = function(request, response) {
     response.send(statusCodes.OK, { message : 'Hello World!' });
 }
 
-function processClientChanges(items, user, request) {
-/*    var entriesTable = request.service.tables.getTable('AzureEntry');
+function isUserAuthorized() {
+    return true;
+}
+
+function processClientChanges(tableName, items, user, request) {
+    var table = request.service.tables.getTable(tableName);
+    var idField = tableName + "Id";
     var serverChanges = [];
     var count = 0;
     if(items.length > 0) {
         items.forEach(function(entry, index) {
-            entriesTable.where({ EntryGuid: entry.EntryGuid })
+            table.where(function(item) {
+                return this[idField] === item;
+            }, entry[idField])
                 .read({
                     success: function(results) {
-                        if(results.length>0 && results[0].UserId == user.userId) {
+                        console.log(tableName + " Item: {" + entry[idField] + "} query returned " + results.length + " results");
+/*                        if(results.length>0 && results[0].UserId == user.userId) {
                             if(results[0].EditDateTime < entry.EditDateTime) {
                                 //Update the server entry
                                 entriesTable.update(entry, {
@@ -60,13 +68,16 @@ function processClientChanges(items, user, request) {
                                     }
                                 }
                             });
-                        }
+                        } */
+                    },
+                    error: function(error) {
+                        console.log(error);
                     }	
                 });
         });
-    } else { 
+    } /*else { 
         processServerChanges(item, user, request, serverChanges);
-    } */    
+    } */ 
 }
 
 function processServerChanges(item, user, request, serverChanges) {
