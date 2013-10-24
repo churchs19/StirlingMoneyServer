@@ -13,7 +13,12 @@ exports.post = function(request, response) {
         body.transactions === undefined) {
             response.send(statusCodes.BAD_REQUEST);
     }
-     
+    processClientChanges("Categories", body.categories, request);
+    processClientChanges("Accounts", body.acounts, request);
+    processClientChanges("AuthorizedUsers", body.authorizedusers, request);
+    processClientChanges("Budgets", body.budgets, request);
+    processClientChanges("Goas", body.goals, request);
+    processClientChanges("Transactions", body.transactions, request);
        
     response.send(statusCodes.OK, { message : 'Hello World!' });
 }
@@ -22,7 +27,8 @@ function isUserAuthorized() {
     return true;
 }
 
-function processClientChanges(tableName, items, user, request) {
+function processClientChanges(tableName, items, request) {
+    console.log("Processing client changes for table: " + tableName);
     var table = request.service.tables.getTable(tableName);
     var idField = tableName + "Id";
     var serverChanges = [];
