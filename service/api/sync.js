@@ -31,6 +31,7 @@ function processClientChanges(tableName, items, request) {
     console.log("Processing client changes for table: " + tableName);
     var table = request.service.tables.getTable(tableName);
     var idField = tableName + "Id";
+    console.log("Key Field Name = " + idField);
     var serverChanges = [];
     var count = 0;
     if(items.length > 0) {
