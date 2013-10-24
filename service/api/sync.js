@@ -2,6 +2,7 @@ exports.post = function(request, response) {
     // Use "request.service" to access features of your mobile service, e.g.:
     //   var tables = request.service.tables;
     //   var push = request.service.push;
+    try {
     console.log("/sync POST with request: " + request.body);
     var body = request.body;
     if(!body.lastSyncDate || 
@@ -21,6 +22,9 @@ exports.post = function(request, response) {
     processClientChanges("Transactions", body.transactions, request);
        
     response.send(statusCodes.OK, { message : 'Hello World!' });
+    } catch(e) {
+        response.send(statusCodes.INTERNAL_SERVER_ERROR, {message : e});
+    }
 }
 
 function isUserAuthorized() {
