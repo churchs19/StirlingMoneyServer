@@ -37,6 +37,7 @@ function processClientChanges(tableName, items, request) {
     if(items.length > 0) {
         items.forEach(function(entry, index) {
             table.where(function(item) {
+                console.log("Item GUID: {" + item + "}");
                 return this[idField] === item;
             }, entry[idField])
                 .read({
