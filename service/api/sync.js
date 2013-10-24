@@ -2,7 +2,19 @@ exports.post = function(request, response) {
     // Use "request.service" to access features of your mobile service, e.g.:
     //   var tables = request.service.tables;
     //   var push = request.service.push;
-    console.log("/sync POST with request: " + request.body.toString());
+    console.log("/sync POST with request: " + request.body);
+    var body = request.body;
+    if(!body.lastSyncDate || 
+        body.categories === undefined ||
+        body.accounts === undefined ||
+        body.authorizedusers === undefined ||
+        body.budgets === undefined ||
+        body.goals === undefined || 
+        body.transactions === undefined) {
+            response.send(statusCodes.BAD_REQUEST);
+    }
+     
+       
     response.send(statusCodes.OK, { message : 'Hello World!' });
 }
 
