@@ -3,7 +3,7 @@ exports.post = function(request, response) {
     //   var tables = request.service.tables;
     //   var push = request.service.push;
     try {
-    console.log("/sync POST with request: " + request.body);
+    console.log("/sync POST with item '%j'", request.body);
     var body = request.body;
     if(!body.lastSyncDate || 
         !body.items) {
