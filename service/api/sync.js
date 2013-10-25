@@ -6,20 +6,12 @@ exports.post = function(request, response) {
     console.log("/sync POST with request: " + request.body);
     var body = request.body;
     if(!body.lastSyncDate || 
-        body.categories === undefined ||
-        body.accounts === undefined ||
-        body.authorizedusers === undefined ||
-        body.budgets === undefined ||
-        body.goals === undefined || 
-        body.transactions === undefined) {
+        !body.items) {
             response.send(statusCodes.BAD_REQUEST);
     }
-    processClientChanges("Categories", "CategoryId", body.categories, request);
-    processClientChanges("Accounts", "AccountId", body.acounts, request);
-    processClientChanges("AuthorizedUsers", "AuthorizedUserId", body.authorizedusers, request);
-    processClientChanges("Budgets", "BudgetId", body.budgets, request);
-    processClientChanges("Goals", "GoalId",body.goals, request);
-    processClientChanges("Transactions", "TransactionId", body.transactions, request);
+    for(var i=0;i<body.items.length;i++) {
+        processClientChanges(body.items[i].name, body.items[i].values, request);
+    }
        
     response.send(statusCodes.OK, { message : 'Hello World!' });
     } catch(e) {
@@ -31,8 +23,9 @@ function isUserAuthorized() {
     return true;
 }
 
-function processClientChanges(tableName, idField, items, request) {
+function processClientChanges(tableName, items, request) {
     console.log("Processing client changes for table: " + tableName);
+    var idField = tableName + "Id";
     var table = request.service.tables.getTable(tableName);
     console.log("Key Field Name = " + idField);
     var serverChanges = [];
