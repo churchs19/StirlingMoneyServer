@@ -29,55 +29,53 @@ function processClientChanges(tableName, idField, values, request) {
     var table = request.service.tables.getTable(tableName);
     var serverChanges = [];
     var count = 0;
-    if(values.length > 0) {
-        values.forEach(function(entry, index) {
-            console.log(idField + " GUID: {" + entry[idField] + "}");
-            table.where(function(item) {
-                return this[idField] === item;
-            }, entry[idField])
-                .read({
-                    success: function(results) {
-                        console.log(tableName + " Item: {" + entry[idField] + "} query returned " + results.length + " results");
+    for(var i=0; i< values.length; i++) {
+        console.log(idField + " GUID: {" +  values[i][idField] + "}");
+        table.where(function(item) {
+            return this[idField] === item;
+        }, values[i][idField])
+            .read({
+                success: function(results) {
+                    console.log(tableName + " Item: {" + values[i][idField] + "} query returned " + results.length + " results");
 /*                        if(results.length>0 && results[0].UserId == user.userId) {
-                            if(results[0].EditDateTime < entry.EditDateTime) {
-                                //Update the server entry
-                                entriesTable.update(entry, {
-                                    success: function () {
-                                        count++;
-                                        if(count===items.length) {
-                                            processServerChanges(item, user, request, serverChanges);
-                                        }
+                        if(results[0].EditDateTime < entry.EditDateTime) {
+                            //Update the server entry
+                            entriesTable.update(entry, {
+                                success: function () {
+                                    count++;
+                                    if(count===items.length) {
+                                        processServerChanges(item, user, request, serverChanges);
                                     }
-                                });
-                            } else {
-                                //Add the server entry to the server changes array
-                                serverChanges.push(results[0]); 
+                                }
+                            });
+                        } else {
+                            //Add the server entry to the server changes array
+                            serverChanges.push(results[0]); 
+                            count++;
+                            if(count===entries.length) {
+                                processServerChanges(item, user, request, serverChanges);
+                            }
+                        }
+                    } else {
+                        //New Entry
+                        entry.UserId = user.userId;
+                        entry.EditDateTime = new Date();
+                        delete entry.id;
+                        entriesTable.insert(entry, {
+                            success: function () {
+                                serverChanges.push(entry);
                                 count++;
                                 if(count===entries.length) {
                                     processServerChanges(item, user, request, serverChanges);
                                 }
                             }
-                        } else {
-                            //New Entry
-                            entry.UserId = user.userId;
-                            entry.EditDateTime = new Date();
-                            delete entry.id;
-                            entriesTable.insert(entry, {
-                                success: function () {
-                                    serverChanges.push(entry);
-                                    count++;
-                                    if(count===entries.length) {
-                                        processServerChanges(item, user, request, serverChanges);
-                                    }
-                                }
-                            });
-                        } */
-                    },
-                    error: function(error) {
-                        console.log(error);
-                    }	
-                });
-        });
+                        });
+                    } */
+                },
+                error: function(error) {
+                    console.log(error);
+                }	
+            });        
     } /*else { 
         processServerChanges(item, user, request, serverChanges);
     } */ 
