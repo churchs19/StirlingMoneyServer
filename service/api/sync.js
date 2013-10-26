@@ -7,6 +7,7 @@ exports.post = function(request, response) {
         var body = request.body;
         if(!body.lastSyncDate || 
             !body.items) {
+                console.error("Invalid request body: %j", request.body);
                 response.send(statusCodes.BAD_REQUEST);
         }
         for(var i=0;i<body.items.length;i++) {
@@ -15,6 +16,7 @@ exports.post = function(request, response) {
            
         response.send(statusCodes.OK, { message : 'Hello World!' });
     } catch(e) {
+        console.error("Unhandled Exception: " + e);
         response.send(statusCodes.INTERNAL_SERVER_ERROR, {message : e});
     }
 }
@@ -29,56 +31,57 @@ function processClientChanges(tableName, idField, values, request) {
     var table = request.service.tables.getTable(tableName);
     var serverChanges = [];
     var count = 0;
+    var keys = []
     for(var i=0; i< values.length; i++) {
-
-        table.where(function(item) {
-            return this[idField] === item;
-        }, values[i][idField])
-            .read({
-                success: function(results) {
-                    console.log(tableName + " Item: {" + values[i][idField] + "} query returned " + results.length + " results");
+        keys.push(values[i][idField]);
+    }
+    table.where(function(keysArray) {
+        return this[idField] in keysArray;
+    }, keys)
+        .read({
+            success: function(results) {
+                console.log(results.length + " results matching client keys in " + tableName);
 /*                        if(results.length>0 && results[0].UserId == user.userId) {
-                        if(results[0].EditDateTime < entry.EditDateTime) {
-                            //Update the server entry
-                            entriesTable.update(entry, {
-                                success: function () {
-                                    count++;
-                                    if(count===items.length) {
-                                        processServerChanges(item, user, request, serverChanges);
-                                    }
-                                }
-                            });
-                        } else {
-                            //Add the server entry to the server changes array
-                            serverChanges.push(results[0]); 
+                if(results[0].EditDateTime < entry.EditDateTime) {
+                    //Update the server entry
+                    entriesTable.update(entry, {
+                        success: function () {
                             count++;
-                            if(count===entries.length) {
+                            if(count===items.length) {
                                 processServerChanges(item, user, request, serverChanges);
                             }
                         }
-                    } else {
-                        //New Entry
-                        entry.UserId = user.userId;
-                        entry.EditDateTime = new Date();
-                        delete entry.id;
-                        entriesTable.insert(entry, {
-                            success: function () {
-                                serverChanges.push(entry);
-                                count++;
-                                if(count===entries.length) {
-                                    processServerChanges(item, user, request, serverChanges);
-                                }
-                            }
-                        });
-                    } */
-                },
-                error: function(error) {
-                    console.log(error);
-                }	
-            });        
-    } /*else { 
-        processServerChanges(item, user, request, serverChanges);
-    } */ 
+                    });
+                } else {
+                    //Add the server entry to the server changes array
+                    serverChanges.push(results[0]); 
+                    count++;
+                    if(count===entries.length) {
+                        processServerChanges(item, user, request, serverChanges);
+                    }
+                }
+            } else {
+                //New Entry
+                entry.UserId = user.userId;
+                entry.EditDateTime = new Date();
+                delete entry.id;
+                entriesTable.insert(entry, {
+                    success: function () {
+                        serverChanges.push(entry);
+                        count++;
+                        if(count===entries.length) {
+                            processServerChanges(item, user, request, serverChanges);
+                        }
+                    }
+                });
+            } */
+            
+        },
+        error: function(error) {
+            console.log(error);
+        }	
+    });
+      
 }
 
 function processServerChanges(item, user, request, serverChanges) {
