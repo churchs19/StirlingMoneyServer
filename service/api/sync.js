@@ -10,7 +10,7 @@ exports.post = function(request, response) {
             response.send(statusCodes.BAD_REQUEST);
     }
     for(var i=0;i<body.items.length;i++) {
-        processClientChanges(body.items[i].name, body.items[i].items, request);
+        processClientChanges(body.items[i].tableName, body.items[i].keyField, body.items[i].values, request);
     }
        
     response.send(statusCodes.OK, { message : 'Hello World!' });
@@ -23,16 +23,15 @@ function isUserAuthorized() {
     return true;
 }
 
-function processClientChanges(tableName, items, request) {
+function processClientChanges(tableName, idField, values, request) {
     console.log("Processing client changes for table: " + tableName);
-    var idField = tableName + "Id";
-    var table = request.service.tables.getTable(tableName);
     console.log("Key Field Name = " + idField);
+    var table = request.service.tables.getTable(tableName);
     var serverChanges = [];
     var count = 0;
-    if(items.length > 0) {
-        items.forEach(function(entry, index) {
-            console.log("Item GUID: {" + entry[idField] + "}");
+    if(values.length > 0) {
+        values.forEach(function(entry, index) {
+            console.log(idField + " GUID: {" + entry[idField] + "}");
             table.where(function(item) {
                 return this[idField] === item;
             }, entry[idField])
