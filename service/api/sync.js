@@ -10,7 +10,7 @@ exports.post = function(request, response) {
             response.send(statusCodes.BAD_REQUEST);
     }
     for(var i=0;i<body.items.length;i++) {
-        processClientChanges(body.items[i].Name, body.items[i].Items, request);
+        processClientChanges(body.items[i].name, body.items[i].items, request);
     }
        
     response.send(statusCodes.OK, { message : 'Hello World!' });
