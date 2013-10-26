@@ -3,6 +3,7 @@ exports.post = function(request, response) {
     //   var tables = request.service.tables;
     //   var push = request.service.push;
     try {
+        require("linq");
         console.log("/sync POST with item '%j'", request.body);
         var body = request.body;
         if(!body.lastSyncDate || 
@@ -41,6 +42,9 @@ function processClientChanges(tableName, idField, values, request) {
         .read({
             success: function(results) {
                 console.log(results.length + " results matching client keys in " + tableName);
+                results.ForEach(function(item) {
+                   console.log(item[idField]); 
+                });
 /*                        if(results.length>0 && results[0].UserId == user.userId) {
                 if(results[0].EditDateTime < entry.EditDateTime) {
                     //Update the server entry
