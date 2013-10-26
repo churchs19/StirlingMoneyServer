@@ -42,7 +42,7 @@ function processClientChanges(tableName, idField, values, request) {
         .read({
             success: function(results) {
                 console.log(results.length + " results matching client keys in " + tableName);
-                results.ForEach(function(item) {
+                results.forEach(function(item) {
                    console.log(item[idField]); 
                 });
 /*                        if(results.length>0 && results[0].UserId == user.userId) {
