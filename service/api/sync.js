@@ -30,7 +30,7 @@ function processClientChanges(tableName, idField, values, request) {
     var serverChanges = [];
     var count = 0;
     for(var i=0; i< values.length; i++) {
-        console.log(idField + " GUID: {" +  values[i][idField] + "}");
+
         table.where(function(item) {
             return this[idField] === item;
         }, values[i][idField])
