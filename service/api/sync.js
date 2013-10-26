@@ -3,17 +3,17 @@ exports.post = function(request, response) {
     //   var tables = request.service.tables;
     //   var push = request.service.push;
     try {
-    console.log("/sync POST with item '%j'", request.body);
-    var body = request.body;
-    if(!body.lastSyncDate || 
-        !body.items) {
-            response.send(statusCodes.BAD_REQUEST);
-    }
-    for(var i=0;i<body.items.length;i++) {
-        processClientChanges(body.items[i].tableName, body.items[i].keyField, body.items[i].values, request);
-    }
-       
-    response.send(statusCodes.OK, { message : 'Hello World!' });
+        console.log("/sync POST with item '%j'", request.body);
+        var body = request.body;
+        if(!body.lastSyncDate || 
+            !body.items) {
+                response.send(statusCodes.BAD_REQUEST);
+        }
+        for(var i=0;i<body.items.length;i++) {
+            processClientChanges(body.items[i].tableName, body.items[i].keyField, body.items[i].values, request);
+        }
+           
+        response.send(statusCodes.OK, { message : 'Hello World!' });
     } catch(e) {
         response.send(statusCodes.INTERNAL_SERVER_ERROR, {message : e});
     }
