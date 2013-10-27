@@ -15,7 +15,7 @@ exports.post = function (request, response) {
             var options = {
                 tableName: body.items[i].tableName,
                 idField: body.items[i].keyField,
-                user: request.user,
+//                user: request.user,
                 userIds: GetAuthorizedUserIds(request),
                 values: body.items[i].values,
                 lastSyncDate: body.lastSyncDate,
@@ -46,7 +46,7 @@ exports.post = function (request, response) {
 
 function GetAuthorizedUserIds(request) {
     var ids = [];
-    ids.push(request.user.userId);
+    //ids.push(request.user.userId);
     return ids;
 }
 
@@ -78,7 +78,7 @@ function processClientChanges(options) {
                         }
                         if(clientVal && item.editDateTime < clientVal.editDateTime) {
                             //Update the server entry
-                            item.userId = options.user.userId;
+//                            item.userId = options.user.userId;
                             entriesTable.update(entry, {
                                 success: function () {
                                     console.log("Updated record {" + item[options.idField] + "} in " + options.tableName);
@@ -88,7 +88,7 @@ function processClientChanges(options) {
                                             tableName: options.tableName,
                                             table: table,
                                             idField: options.idField,
-                                            user: options.user,
+//                                            user: options.user,
                                             userIds: options.userIds,
                                             values: valuesEnum.Where(function(it) { return !(it[idField] in serverKeys); }).ToArray(),
                                             lastSyncDate: body.lastSyncDate,
@@ -112,7 +112,7 @@ function processClientChanges(options) {
                                     tableName: options.tableName,
                                     table: table,
                                     idField: options.idField,
-                                    user: options.user,
+//                                    user: options.user,
                                     userIds: options.userIds,
                                     values: valuesEnum.Where(function(it) { return !(it[idField] in serverKeys); }).ToArray(),
                                     lastSyncDate: body.lastSyncDate,
@@ -130,7 +130,7 @@ function processClientChanges(options) {
                         tableName: options.tableName,
                         table: table,
                         idField: options.idField,
-                        user: options.user,
+//                        user: options.user,
                         userIds: options.userIds,
                         lastSyncDate: body.lastSyncDate,
                         processedKeys: serverKeys,
@@ -166,7 +166,7 @@ function processClientChanges(options) {
             tableName: options.tableName,
             table: table,
             idField: options.idField,
-            user: options.user,
+//            user: options.user,
             userIds: options.userIds,
             lastSyncDate: body.lastSyncDate,
             processedKeys: serverKeys,
@@ -182,8 +182,8 @@ function processClientInserts(options) {
     console.log("Processing client inserts for table: " + options.tableName);    
     var count = 0;
     items.forEach(function(item) {
-        item.UserId = options.user.userId;
-        item.EditDateTime = new Date();
+//        item.userId = options.user.userId;
+        item.editDateTime = new Date();
         delete item.id;
         options.table.insert(entry, {
             success: function () {
@@ -196,7 +196,7 @@ function processClientInserts(options) {
                         tableName: options.tableName,
                         table: table,
                         idField: options.idField,
-                        user: options.user,
+//                        user: options.user,
                         userIds: options.userIds,
                         lastSyncDate: body.lastSyncDate,
                         processedKeys: options.processedKeys,
@@ -217,7 +217,7 @@ function processClientInserts(options) {
 function processServerChanges(options) {
     console.log("Processing server changes for table: " + options.tableName);
     table.where(function(itemOptions) {
-        return ((!(this[itemOptions.idField] in options.processedKeys)) && (this.userId in options.userIds) && (this.editDateTime >= options.lastSyncDate));
+        return ((!(this[itemOptions.idField] in options.processedKeys)) /*&& (this.userId in options.userIds)*/ && (this.editDateTime >= options.lastSyncDate));
     }, options).read({
         success: function(results) {
             for(var i=0;i<results.length;i++) {
@@ -231,7 +231,7 @@ function processServerChanges(options) {
             options.success(retRetresults);
         },
         error: function(error) {
-            options.error(error);     
+            options.error(error);
         }
     });
 }
