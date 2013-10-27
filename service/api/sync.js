@@ -15,7 +15,6 @@ exports.post = function (request, response) {
         }
         body.items.forEach(function (item) {
             var options = {
-                table:  request.service.tables.getTable(item.tableName),
                 tableName: item.tableName,
                 idField: item.keyField,
                 user: request.user,
@@ -38,7 +37,7 @@ exports.post = function (request, response) {
                     }
                 }
             };
-            processClientChanges(options);
+            processClientChanges(options, request);
         });
     } catch(e) {
         console.error("Unhandled Exception: " + e);
@@ -52,13 +51,14 @@ function GetAuthorizedUserIds(request) {
     return ids;
 }
 
-function processClientChanges(options) {
+function processClientChanges(options, request) {
     console.log("Processing client changes for table: " + options.tableName);
     console.log("Key Field Name = " + options.idField);
     console.log("Options: %j", options);
     var serverChanges = [];
     var keys = [];
     var serverKeys = [];
+    var table = request.service.tables.getTable(options.tableName);
     if(options.values.length > 0) {
         var valuesEnum = Enumerable.From(options.values);
         for(var i=0; i< options.values.length; i++) {
