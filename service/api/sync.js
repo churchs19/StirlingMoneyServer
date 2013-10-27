@@ -56,18 +56,18 @@ function processClientChanges(options, request) {
     console.log("Key Field Name = " + options.idField);
     console.log("Options: %j", options);
     var serverChanges = [];
-    var keys = [];
     var serverKeys = [];
     var table = request.service.tables.getTable(options.tableName);
     if(options.values.length > 0) {
         var valuesEnum = Enumerable.From(options.values);
+        var sql = "select * from " + options.tableName + " where " + options.idField + " in (";
         for(var i=0; i< options.values.length; i++) {
-            keys.push(options.values[i][options.idField]);
+            sql = sql + "'" + options.values[i][options.idField] + "',"
         }
-        options.table.where(function(whereOptions) {
-            return this[whereOptions.idField] && (this[whereOptions.idField] in whereOptions.keys);
-        }, { keys: keys, idField: options.idField})
-            .read({
+        sql = sql.substr(0, sql.length - 2);
+        sql = sql + ")";
+        console.log(sql);
+        request.service.mssql.query(sql, {
             success: function(results) {
                 console.log(results.length + " results matching client keys in " + options.tableName);
                 var count = 0;
@@ -82,14 +82,13 @@ function processClientChanges(options, request) {
                         if(clientVal && item.editDateTime < clientVal.editDateTime) {
                             //Update the server entry
                             item.userId = options.user.userId;
-                            options.table.update(item, {
+                            table.update(item, {
                                 success: function () {
                                     console.log("Updated record {" + item[options.idField] + "} in " + options.tableName);
                                     count++;
                                     if(count===results.length) {
                                         var insertOptions = {
                                             tableName: options.tableName,
-                                            table: options.table,
                                             idField: options.idField,
                                             user: options.user,
                                             userIds: options.userIds,
@@ -100,7 +99,7 @@ function processClientChanges(options, request) {
                                             success: options.success,
                                             error: options.error
                                         };
-                                        processClientInserts(insertOptions);
+                                        processClientInserts(insertOptions, request);
                                     }
                                 },
                                 error: function(error) {
@@ -113,7 +112,6 @@ function processClientChanges(options, request) {
                             if(count===results.length) {
                                 var insertOptions = {
                                     tableName: options.tableName,
-                                    table: options.table,
                                     idField: options.idField,
                                     user: options.user,
                                     userIds: options.userIds,
@@ -124,14 +122,13 @@ function processClientChanges(options, request) {
                                     success: options.success,
                                     error: options.error
                                 };
-                                processClientInserts(insertOptions);
+                                processClientInserts(insertOptions, request);
                             }
                         }
                     });
                 } else {
                     var serverOptions = {
                         tableName: options.tableName,
-                        table: options.table,
                         idField: options.idField,
                         user: options.user,
                         userIds: options.userIds,
@@ -141,7 +138,7 @@ function processClientChanges(options, request) {
                         success: options.success,
                         error: options.error
                     };
-                    processServerChanges(serverOptions);
+                    processServerChanges(serverOptions, request);
                 }                
             },
             error: function(error) {
@@ -151,7 +148,6 @@ function processClientChanges(options, request) {
     } else {
         var serverOptions = {
             tableName: options.tableName,
-            table: options.table,
             idField: options.idField,
             user: options.user,
             userIds: options.userIds,
@@ -161,19 +157,20 @@ function processClientChanges(options, request) {
             success: options.success,
             error: options.error
         };
-        processServerChanges(serverOptions);
+        processServerChanges(serverOptions, request);
     }
 }
                                 
-function processClientInserts(options) {
+function processClientInserts(options, request) {
     console.log("Processing client inserts for table: " + options.tableName);    
     console.log("Options: %j", options);
     var count = 0;
+    var table = request.service.tables.getTable(options.tableName);
     options.values.forEach(function(item) {
         item.userId = options.user.userId;
         item.editDateTime = new Date();
         delete item.id;
-        options.table.insert(item, {
+        table.insert(item, {
             success: function () {
                 options.processedKeys.push(item[options.idField]);
                 console.log("Inserted item %j into table: " + options.tableName, item);
@@ -182,7 +179,6 @@ function processClientInserts(options) {
                 if(count===options.values.length) {
                     var serverOptions = {
                         tableName: options.tableName,
-                        table: options.table,
                         idField: options.idField,
                         user: options.user,
                         userIds: options.userIds,
@@ -192,7 +188,7 @@ function processClientInserts(options) {
                         success: options.success,
                         error: options.error
                     };
-                    processServerChanges(serverOptions);
+                    processServerChanges(serverOptions, request);
                 }
             },
             error: function(error) {
@@ -202,12 +198,17 @@ function processClientInserts(options) {
     });
 }
 
-function processServerChanges(options) {
+function processServerChanges(options, request) {
     console.log("Processing server changes for table: " + options.tableName);
     console.log("Options: %j", options);
-    options.table.where(function(itemOptions) {
-        return ((!(this[itemOptions.idField] in options.processedKeys)) /*&& (this.userId in options.userIds)*/ && (this.editDateTime >= options.lastSyncDate));
-    }, options).read({
+    var sql = "select * from " + options.tableName + " where editDateTime > ? and " + options.idField + " not in (";
+    for(var i=0; i< options.processedKeys.length; i++) {
+        sql = sql + "'" + options.processedKeys[i] + "',"
+    }
+    sql = sql.substr(0, sql.length - 2);
+    sql = sql + ")";
+    console.log(sql);
+    request.service.mssql.query(sql, [options.lastSyncDate], {
         success: function(results) {
             for(var i=0;i<results.length;i++) {
                 options.serverChanges.push(results[i]);   
