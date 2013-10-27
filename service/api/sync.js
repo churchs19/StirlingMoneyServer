@@ -4,7 +4,7 @@ exports.post = function (request, response) {
     //   var push = request.service.push;
     try {
         require("linq");
-        console.log("/sync POST with item '%j' from user '%j'", request.body, request.user);
+        console.log("/sync POST with request '%j'", request);
         var body = request.body, count = 0, results = [];
         if (!body.lastSyncDate ||
                 !body.items) {
@@ -23,7 +23,6 @@ exports.post = function (request, response) {
                     results.push(serverChanges);
                     count++;
                     if(count === body.items.length) {
-                        console.log("
                         response.send(statusCodes.OK, results);   
                     }
                 },
