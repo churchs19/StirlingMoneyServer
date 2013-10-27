@@ -1,70 +1,146 @@
-exports.post = function(request, response) {
+exports.post = function (request, response) {
     // Use "request.service" to access features of your mobile service, e.g.:
     //   var tables = request.service.tables;
     //   var push = request.service.push;
     try {
         require("linq");
-        console.log("/sync POST with item '%j'", request.body);
-        var body = request.body;
-        if(!body.lastSyncDate || 
-            !body.items) {
-                console.error("Invalid request body: %j", request.body);
-                response.send(statusCodes.BAD_REQUEST);
+        console.log("/sync POST with item '%j' from user '%j'", request.body, request.user);
+        var body = request.body, count = 0, results = [];
+        if (!body.lastSyncDate ||
+                !body.items) {
+            console.error("Invalid request body: %j", request.body);
+            response.send(statusCodes.BAD_REQUEST);
         }
-        for(var i=0;i<body.items.length;i++) {
-            processClientChanges(body.items[i].tableName, body.items[i].keyField, body.items[i].values, request);
+        for (var i=0;i<body.items.length;i++) {
+            var options = {
+                tableName: body.items[i].tableName,
+                idField: body.items[i].keyField,
+                user: request.user,
+                userIds: GetAuthorizedUserIds(request),
+                values: body.items[i].values,
+                lastSyncDate: body.lastSyncDate,
+                success: function(serverChanges) {
+                    results.push(serverChanges);
+                    count++;
+                    if(count === body.items.length) {
+                        console.log("
+                        response.send(statusCodes.OK, results);   
+                    }
+                },
+                error: function(error, statusCode) {
+                    console.error("Error occurred processing request '%j' from user '%j':\n\n" + error, request.body, request.user);
+                    if(!statusCode) {
+                        response.send(statusCodes.INTERNAL_SERVER_ERROR, {message : error});
+                    } else {
+                        response.send(statusCode, {message: error});
+                    }
+                }
+            };
+            processClientChanges(options);
         }
-           
-        response.send(statusCodes.OK, { message : 'Hello World!' });
     } catch(e) {
         console.error("Unhandled Exception: " + e);
         response.send(statusCodes.INTERNAL_SERVER_ERROR, {message : e});
     }
 }
 
-function isUserAuthorized() {
-    return true;
+function GetAuthorizedUserIds(request) {
+    var ids = [];
+    ids.push(request.user.userId);
+    return ids;
 }
 
-function processClientChanges(tableName, idField, values, request) {
-    console.log("Processing client changes for table: " + tableName);
-    console.log("Key Field Name = " + idField);
-    var table = request.service.tables.getTable(tableName);
+function processClientChanges(options) {
+    console.log("Processing client changes for table: " + options.tableName);
+    console.log("Key Field Name = " + options.idField);
+    var table = request.service.tables.getTable(options.tableName);
     var serverChanges = [];
-    var count = 0;
-    var keys = []
-    for(var i=0; i< values.length; i++) {
-        keys.push(values[i][idField]);
+    var keys = [];
+    var serverKeys = [];
+    if(values.length > 0) {
+    var valuesEnum = Enumerable.From(options.values);
+    for(var i=0; i< options.values.length; i++) {
+        keys.push(options.values[i][options.idField]);
     }
     table.where(function(keysArray) {
-        return this[idField] in keysArray;
+        return this[options.idField] in keysArray;
     }, keys)
         .read({
             success: function(results) {
-                console.log(results.length + " results matching client keys in " + tableName);
-                results.forEach(function(item) {
-                   console.log(item[idField]); 
-                });
-/*                        if(results.length>0 && results[0].UserId == user.userId) {
-                if(results[0].EditDateTime < entry.EditDateTime) {
-                    //Update the server entry
-                    entriesTable.update(entry, {
-                        success: function () {
+                console.log(results.length + " results matching client keys in " + options.tableName);
+                if(results.length > 0) {
+                    results.forEach(function(item) {
+                        serverKeys.push(item[options.idField]);
+                        var clientVal = valuesEnum.Where(function(it) { return it[options.idField] === item[options.idField]; }).FirstOrDefault(null);
+                        if(!(item.userId in options.userIds)) {
+                            options.error("Unauthorized access", statusCodes.UNAUTHORIZED);
+                            return;
+                        }
+                        if(clientVal && item.editDateTime < clientVal.editDateTime) {
+                            //Update the server entry
+                            item.userId = options.user.userId;
+                            entriesTable.update(entry, {
+                                success: function () {
+                                    console.log("Updated record {" + item[options.idField] + "} in " + options.tableName);
+                                    count++;
+                                    if(count===results.length) {
+                                        var insertOptions = {
+                                            tableName: options.tableName,
+                                            table: table,
+                                            idField: options.idField,
+                                            user: options.user,
+                                            userIds: options.userIds,
+                                            values: valuesEnum.Where(function(it) { return !(it[idField] in serverKeys); }).ToArray(),
+                                            lastSyncDate: body.lastSyncDate,
+                                            processedKeys: serverKeys,
+                                            serverChanges: serverChanges,
+                                            success: options.success,
+                                            error: options.error
+                                        };
+                                        processClientInserts(options);
+                                    }
+                                },
+                                error: function(error) {
+                                    options.error(error);
+                                }
+                            });
+                        } else {
+                            serverChanges.push(item);
                             count++;
-                            if(count===items.length) {
-                                processServerChanges(item, user, request, serverChanges);
+                            if(count===results.length) {
+                                var insertOptions = {
+                                    tableName: options.tableName,
+                                    table: table,
+                                    idField: options.idField,
+                                    user: options.user,
+                                    userIds: options.userIds,
+                                    values: valuesEnum.Where(function(it) { return !(it[idField] in serverKeys); }).ToArray(),
+                                    lastSyncDate: body.lastSyncDate,
+                                    processedKeys: serverKeys,
+                                    serverChanges: serverChanges,
+                                    success: options.success,
+                                    error: options.error
+                                };
+                                processClientInserts(options);
                             }
                         }
                     });
                 } else {
-                    //Add the server entry to the server changes array
-                    serverChanges.push(results[0]); 
-                    count++;
-                    if(count===entries.length) {
-                        processServerChanges(item, user, request, serverChanges);
-                    }
+                    var serverOptions = {
+                        tableName: options.tableName,
+                        table: table,
+                        idField: options.idField,
+                        user: options.user,
+                        userIds: options.userIds,
+                        lastSyncDate: body.lastSyncDate,
+                        processedKeys: serverKeys,
+                        serverChanges: serverChanges,
+                        success: options.success,
+                        error: options.error
+                    };
+                    processServerChanges(options);
                 }
-            } else {
+/*            } else {
                 //New Entry
                 entry.UserId = user.userId;
                 entry.EditDateTime = new Date();
@@ -82,34 +158,80 @@ function processClientChanges(tableName, idField, values, request) {
             
         },
         error: function(error) {
-            console.log(error);
+            options.error(error);
         }	
     });
-      
+    } else {
+        var serverOptions = {
+            tableName: options.tableName,
+            table: table,
+            idField: options.idField,
+            user: options.user,
+            userIds: options.userIds,
+            lastSyncDate: body.lastSyncDate,
+            processedKeys: serverKeys,
+            serverChanges: serverChanges,
+            success: options.success,
+            error: options.error
+        };
+        processServerChanges(options);
+    }
+}
+                                
+function processClientInserts(options) {
+    console.log("Processing client inserts for table: " + options.tableName);    
+    var count = 0;
+    items.forEach(function(item) {
+        item.UserId = options.user.userId;
+        item.EditDateTime = new Date();
+        delete item.id;
+        options.table.insert(entry, {
+            success: function () {
+                options.processedKeys.push(item[options.idField]);
+                console.log("Inserted item %j into table: " + options.tableName, item);
+                serverChanges.push(item);
+                count++;
+                if(count===items.length) {
+                    var serverOptions = {
+                        tableName: options.tableName,
+                        table: table,
+                        idField: options.idField,
+                        user: options.user,
+                        userIds: options.userIds,
+                        lastSyncDate: body.lastSyncDate,
+                        processedKeys: options.processedKeys,
+                        serverChanges: options.serverChanges,
+                        success: options.success,
+                        error: options.error
+                    };
+                    processServerChanges(options);
+                }
+            },
+            error: function(error) {
+                options.error(error);   
+            }
+        });
+    });
 }
 
-function processServerChanges(item, user, request, serverChanges) {
-	var sql = "select * from AzureEntry where EditDateTime > ? and UserId = ?";
-    var params = [];
-    params.push(item.lastSyncDate);
-    params.push(user.userId);
-	if(item.entries.length > 0) {
-        sql+=" and EntryGuid NOT IN (";
-        for(var i = 0; i<item.entries.length; i++) {
-            sql+="?,";
-            params.push(item.entries[i].EntryGuid);            
-        }
-        sql = sql.substr(0, sql.length-1) + ")";
-    }
-//    console.log(sql);
-//    console.log(params);
-    request.service.mssql.query(sql, params, {
+function processServerChanges(options) {
+    console.log("Processing server changes for table: " + options.tableName);
+    table.where(function(itemOptions) {
+        return ((!(this[itemOptions.idField] in options.processedKeys)) && (this.userId in options.userIds) && (this.editDateTime >= options.lastSyncDate));
+    }, options).read({
         success: function(results) {
-            serverChanges = serverChanges.concat(results);
-            var requestResult = {
-                ServerChanges : serverChanges
-            };
-            request.respond(statusCodes.OK, requestResult);
+            for(var i=0;i<results.length;i++) {
+                options.serverChanges.push(results[i]);   
+            }
+            console.log(options.serverChanges.length + " server changes in table: " + options.tableName);
+            var retResults = {
+                tableName: options.tableName,
+                changes: options.serverChanges
+            }
+            options.success(retRetresults);
+        },
+        error: function(error) {
+            options.error(error);     
         }
     });
 }
