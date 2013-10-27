@@ -65,11 +65,7 @@ function processClientChanges(options) {
             keys.push(options.values[i][options.idField]);
         }
         options.table.where(function(whereOptions) {
-            if(this[whereOptions.idField]) {
-                return this[whereOptions.idField] in whereOptions.keys;
-            } else {
-                return false;
-            }
+            return this[whereOptions.idField] && (this[whereOptions.idField] in whereOptions.keys);
         }, { keys: keys, idField: options.idField})
             .read({
             success: function(results) {
