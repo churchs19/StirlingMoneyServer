@@ -55,6 +55,7 @@ function GetAuthorizedUserIds(request) {
 function processClientChanges(options) {
     console.log("Processing client changes for table: " + options.tableName);
     console.log("Key Field Name = " + options.idField);
+    console.log("Options: %j", options);
     var serverChanges = [];
     var keys = [];
     var serverKeys = [];
