@@ -1,9 +1,10 @@
+var linq = require("linq");
+
 exports.post = function (request, response) {
     // Use "request.service" to access features of your mobile service, e.g.:
     //   var tables = request.service.tables;
     //   var push = request.service.push;
     try {
-        require("linq");
         console.log("/sync POST with request '%j'", request);
         var body = request.body, count = 0, results = [];
         if (!body.lastSyncDate ||
@@ -17,7 +18,7 @@ exports.post = function (request, response) {
                 tableName: body.items[i].tableName,
                 idField: body.items[i].keyField,
 //                user: request.user,
-                userIds: GetAuthorizedUserIds(request),
+                userIds: [],
                 values: body.items[i].values,
                 lastSyncDate: body.lastSyncDate,
                 success: function(serverChanges) {
@@ -57,7 +58,7 @@ function processClientChanges(options) {
     var keys = [];
     var serverKeys = [];
     if(options.values.length > 0) {
-    var valuesEnum = Enumerable.From(options.values);
+    var valuesEnum = linq.Enumerable.From(options.values);
     for(var i=0; i< options.values.length; i++) {
         keys.push(options.values[i][options.idField]);
     }
@@ -67,6 +68,7 @@ function processClientChanges(options) {
         .read({
             success: function(results) {
                 console.log(results.length + " results matching client keys in " + options.tableName);
+                var count = 0;
                 if(results.length > 0) {
                     results.forEach(function(item) {
                         serverKeys.push(item[options.idField]);
@@ -78,19 +80,19 @@ function processClientChanges(options) {
                         if(clientVal && item.editDateTime < clientVal.editDateTime) {
                             //Update the server entry
 //                            item.userId = options.user.userId;
-                            entriesTable.update(entry, {
+                            options.table.update(item, {
                                 success: function () {
                                     console.log("Updated record {" + item[options.idField] + "} in " + options.tableName);
                                     count++;
                                     if(count===results.length) {
                                         var insertOptions = {
                                             tableName: options.tableName,
-                                            table: table,
+                                            table: options.table,
                                             idField: options.idField,
 //                                            user: options.user,
                                             userIds: options.userIds,
-                                            values: valuesEnum.Where(function(it) { return !(it[idField] in serverKeys); }).ToArray(),
-                                            lastSyncDate: body.lastSyncDate,
+                                            values: valuesEnum.Where(function(it) { return !(it[options.idField] in serverKeys); }).ToArray(),
+                                            lastSyncDate: options.lastSyncDate,
                                             processedKeys: serverKeys,
                                             serverChanges: serverChanges,
                                             success: options.success,
@@ -109,12 +111,12 @@ function processClientChanges(options) {
                             if(count===results.length) {
                                 var insertOptions = {
                                     tableName: options.tableName,
-                                    table: table,
+                                    table: options.table,
                                     idField: options.idField,
 //                                    user: options.user,
                                     userIds: options.userIds,
-                                    values: valuesEnum.Where(function(it) { return !(it[idField] in serverKeys); }).ToArray(),
-                                    lastSyncDate: body.lastSyncDate,
+                                    values: valuesEnum.Where(function(it) { return !(it[options.idField] in serverKeys); }).ToArray(),
+                                    lastSyncDate: options.lastSyncDate,
                                     processedKeys: serverKeys,
                                     serverChanges: serverChanges,
                                     success: options.success,
@@ -127,11 +129,11 @@ function processClientChanges(options) {
                 } else {
                     var serverOptions = {
                         tableName: options.tableName,
-                        table: table,
+                        table: options.table,
                         idField: options.idField,
 //                        user: options.user,
                         userIds: options.userIds,
-                        lastSyncDate: body.lastSyncDate,
+                        lastSyncDate: options.lastSyncDate,
                         processedKeys: serverKeys,
                         serverChanges: serverChanges,
                         success: options.success,
@@ -163,11 +165,11 @@ function processClientChanges(options) {
     } else {
         var serverOptions = {
             tableName: options.tableName,
-            table: table,
+            table: options.table,
             idField: options.idField,
 //            user: options.user,
             userIds: options.userIds,
-            lastSyncDate: body.lastSyncDate,
+            lastSyncDate: options.lastSyncDate,
             processedKeys: serverKeys,
             serverChanges: serverChanges,
             success: options.success,
@@ -180,24 +182,24 @@ function processClientChanges(options) {
 function processClientInserts(options) {
     console.log("Processing client inserts for table: " + options.tableName);    
     var count = 0;
-    items.forEach(function(item) {
+    options.values.forEach(function(item) {
 //        item.userId = options.user.userId;
         item.editDateTime = new Date();
         delete item.id;
-        options.table.insert(entry, {
+        options.table.insert(item, {
             success: function () {
                 options.processedKeys.push(item[options.idField]);
                 console.log("Inserted item %j into table: " + options.tableName, item);
-                serverChanges.push(item);
+                options.serverChanges.push(item);
                 count++;
-                if(count===items.length) {
+                if(count===options.values.length) {
                     var serverOptions = {
                         tableName: options.tableName,
-                        table: table,
+                        table: options.table,
                         idField: options.idField,
 //                        user: options.user,
                         userIds: options.userIds,
-                        lastSyncDate: body.lastSyncDate,
+                        lastSyncDate: options.lastSyncDate,
                         processedKeys: options.processedKeys,
                         serverChanges: options.serverChanges,
                         success: options.success,
@@ -215,7 +217,7 @@ function processClientInserts(options) {
 
 function processServerChanges(options) {
     console.log("Processing server changes for table: " + options.tableName);
-    table.where(function(itemOptions) {
+    options.table.where(function(itemOptions) {
         return ((!(this[itemOptions.idField] in options.processedKeys)) /*&& (this.userId in options.userIds)*/ && (this.editDateTime >= options.lastSyncDate));
     }, options).read({
         success: function(results) {
@@ -227,7 +229,7 @@ function processServerChanges(options) {
                 tableName: options.tableName,
                 changes: options.serverChanges
             }
-            options.success(retRetresults);
+            options.success(retResults);
         },
         error: function(error) {
             options.error(error);
