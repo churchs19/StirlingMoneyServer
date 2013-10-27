@@ -1,4 +1,4 @@
-require("linq");
+var Enumerable = require("linq");
 
 exports.post = function (request, response) {
     // Use "request.service" to access features of your mobile service, e.g.:
