@@ -18,7 +18,7 @@ exports.post = function (request, response) {
                 table:  request.service.tables.getTable(item.tableName),
                 tableName: item.tableName,
                 idField: item.keyField,
-//                user: request.user,
+                user: request.user,
                 userIds: [],
                 values: item.values,
                 lastSyncDate: body.lastSyncDate,
@@ -58,15 +58,16 @@ function processClientChanges(options) {
     var serverChanges = [];
     var keys = [];
     var serverKeys = [];
+    var idField = options.idField;
     if(options.values.length > 0) {
-    var valuesEnum = Enumerable.From(options.values);
-    for(var i=0; i< options.values.length; i++) {
-        keys.push(options.values[i][options.idField]);
-    }
-    options.table.where(function(keysArray) {
-        return this[options.idField] in keysArray;
-    }, keys)
-        .read({
+        var valuesEnum = Enumerable.From(options.values);
+        for(var i=0; i< options.values.length; i++) {
+            keys.push(options.values[i][idField]);
+        }
+        options.table.where(function(keysArray) {
+            return this[idField] in keysArray;
+        }, keys)
+            .read({
             success: function(results) {
                 console.log(results.length + " results matching client keys in " + options.tableName);
                 var count = 0;
@@ -132,7 +133,7 @@ function processClientChanges(options) {
                         tableName: options.tableName,
                         table: options.table,
                         idField: options.idField,
-//                        user: options.user,
+                        user: options.user,
                         userIds: options.userIds,
                         lastSyncDate: options.lastSyncDate,
                         processedKeys: serverKeys,
@@ -141,34 +142,18 @@ function processClientChanges(options) {
                         error: options.error
                     };
                     processServerChanges(serverOptions);
-                }
-/*            } else {
-                //New Entry
-                entry.UserId = user.userId;
-                entry.EditDateTime = new Date();
-                delete entry.id;
-                entriesTable.insert(entry, {
-                    success: function () {
-                        serverChanges.push(entry);
-                        count++;
-                        if(count===entries.length) {
-                            processServerChanges(item, user, request, serverChanges);
-                        }
-                    }
-                });
-            } */
-            
-        },
-        error: function(error) {
-            options.error(error);
-        }	
-    });
+                }                
+            },
+            error: function(error) {
+                options.error(error);
+            }	
+        });
     } else {
         var serverOptions = {
             tableName: options.tableName,
             table: options.table,
             idField: options.idField,
-//            user: options.user,
+            user: options.user,
             userIds: options.userIds,
             lastSyncDate: options.lastSyncDate,
             processedKeys: serverKeys,
