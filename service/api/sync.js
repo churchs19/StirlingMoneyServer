@@ -1,4 +1,4 @@
-var linq = require("linq");
+require("linq");
 
 exports.post = function (request, response) {
     // Use "request.service" to access features of your mobile service, e.g.:
@@ -59,7 +59,7 @@ function processClientChanges(options) {
     var keys = [];
     var serverKeys = [];
     if(options.values.length > 0) {
-    var valuesEnum = linq.Enumerable.From(options.values);
+    var valuesEnum = Enumerable.From(options.values);
     for(var i=0; i< options.values.length; i++) {
         keys.push(options.values[i][options.idField]);
     }
