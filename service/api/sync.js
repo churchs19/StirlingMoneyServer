@@ -6,7 +6,7 @@ exports.post = function (request, response) {
     //   var push = request.service.push;
     try {
         console.log("/sync POST with request '%j'", request.body);
-        console.log("/sync POST by user: %j", request.user)
+//        console.log("/sync POST by user: %j", request.user)
         var body = request.body, count = 0, results = [];
         if (!body.lastSyncDate ||
                 !body.items) {
@@ -53,8 +53,8 @@ function GetAuthorizedUserIds(request) {
 
 function processClientChanges(options, request) {
     console.log("Processing client changes for table: " + options.tableName);
-    console.log("Key Field Name = " + options.idField);
-    console.log("Options: %j", options);
+//    console.log("Key Field Name = " + options.idField);
+//    console.log("Options: %j", options);
     var serverChanges = [];
     var serverKeys = [];
     var table = request.service.tables.getTable(options.tableName);
@@ -165,7 +165,7 @@ function processClientChanges(options, request) {
                                 
 function processClientInserts(options, request) {
     console.log("Processing client inserts for table: " + options.tableName);    
-    console.log("Options: %j", options);
+//    console.log("Options: %j", options);
     var count = 0;
     var table = request.service.tables.getTable(options.tableName);
     options.values.forEach(function(item) {
@@ -202,7 +202,7 @@ function processClientInserts(options, request) {
 
 function processServerChanges(options, request) {
     console.log("Processing server changes for table: " + options.tableName);
-    console.log("Options: %j", options);
+//    console.log("Options: %j", options);
     var sql = "select * from " + options.tableName + " where editDateTime > ? and " + options.idField + " not in (";
     for(var i=0; i< options.processedKeys.length; i++) {
         sql = sql + "'" + options.processedKeys[i] + "',"
