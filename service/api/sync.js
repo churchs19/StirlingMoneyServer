@@ -66,6 +66,7 @@ function processClientChanges(options) {
             keys.push(options.values[i][idField]);
         }
         options.table.where(function(keysArray) {
+            console.log("idField: " + idField);
             return this[idField] in keysArray;
         }, keys)
             .read({
