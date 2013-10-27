@@ -64,7 +64,9 @@ function processClientChanges(options, request) {
         for(var i=0; i< options.values.length; i++) {
             sql = sql + "'" + options.values[i][options.idField] + "',"
         }
-        sql = sql.substr(0, sql.length - 2);
+        if(options.values.length > 0) {
+            sql = sql.substr(0, sql.length - 1);        
+        }
         sql = sql + ")";
         console.log(sql);
         request.service.mssql.query(sql, {
@@ -205,7 +207,9 @@ function processServerChanges(options, request) {
     for(var i=0; i< options.processedKeys.length; i++) {
         sql = sql + "'" + options.processedKeys[i] + "',"
     }
-    sql = sql.substr(0, sql.length - 2);
+    if(options.processedKeys.length > 0) {
+        sql = sql.substr(0, sql.length - 1);        
+    }
     sql = sql + ")";
     console.log(sql);
     request.service.mssql.query(sql, [options.lastSyncDate], {
