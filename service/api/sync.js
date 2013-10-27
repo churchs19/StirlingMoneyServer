@@ -65,10 +65,9 @@ function processClientChanges(options) {
         for(var i=0; i< options.values.length; i++) {
             keys.push(options.values[i][idField]);
         }
-        options.table.where(function(keysArray) {
-            console.log("idField: " + idField);
-            return this[idField] in keysArray;
-        }, keys)
+        options.table.where(function(whereOptions) {
+            return this[whereOptions.idField] in whereOptions.keys;
+        }, { keys: keys, idField: options.idField})
             .read({
             success: function(results) {
                 console.log(results.length + " results matching client keys in " + options.tableName);
