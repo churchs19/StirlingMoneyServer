@@ -59,14 +59,17 @@ function processClientChanges(options) {
     var serverChanges = [];
     var keys = [];
     var serverKeys = [];
-    var idField = options.idField;
     if(options.values.length > 0) {
         var valuesEnum = Enumerable.From(options.values);
         for(var i=0; i< options.values.length; i++) {
             keys.push(options.values[i][idField]);
         }
         options.table.where(function(whereOptions) {
-            return this[whereOptions.idField] in whereOptions.keys;
+            if(this[whereOptions.idField]) {
+                return this[whereOptions.idField] in whereOptions.keys;
+            } else {
+                return false;
+            }
         }, { keys: keys, idField: options.idField})
             .read({
             success: function(results) {
