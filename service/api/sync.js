@@ -62,7 +62,7 @@ function processClientChanges(options) {
     if(options.values.length > 0) {
         var valuesEnum = Enumerable.From(options.values);
         for(var i=0; i< options.values.length; i++) {
-            keys.push(options.values[i][idField]);
+            keys.push(options.values[i][options.idField]);
         }
         options.table.where(function(whereOptions) {
             if(this[whereOptions.idField]) {
