@@ -5,21 +5,22 @@ exports.post = function (request, response) {
     //   var tables = request.service.tables;
     //   var push = request.service.push;
     try {
-        console.log("/sync POST with request '%j'", request);
+        console.log("/sync POST with request '%j'", request.body);
+        console.log("/sync POST by user: %j", request.user)
         var body = request.body, count = 0, results = [];
         if (!body.lastSyncDate ||
                 !body.items) {
             console.error("Invalid request body: %j", request.body);
-            response.send(statusCodes.BAD_REQUEST);
+            response.send(statusCodes.BAD_REQUEST, {message: "Invalid request body"});
         }
-        for (var i=0;i<body.items.length;i++) {
+        body.items.forEach(function (item) {
             var options = {
-                table:  request.service.tables.getTable(body.items[i].tableName),
-                tableName: body.items[i].tableName,
-                idField: body.items[i].keyField,
+                table:  request.service.tables.getTable(item.tableName),
+                tableName: item.tableName,
+                idField: item.keyField,
 //                user: request.user,
                 userIds: [],
-                values: body.items[i].values,
+                values: item.values,
                 lastSyncDate: body.lastSyncDate,
                 success: function(serverChanges) {
                     results.push(serverChanges);
@@ -38,7 +39,7 @@ exports.post = function (request, response) {
                 }
             };
             processClientChanges(options);
-        }
+        });
     } catch(e) {
         console.error("Unhandled Exception: " + e);
         response.send(statusCodes.INTERNAL_SERVER_ERROR, {message : e});
@@ -98,7 +99,7 @@ function processClientChanges(options) {
                                             success: options.success,
                                             error: options.error
                                         };
-                                        processClientInserts(options);
+                                        processClientInserts(insertOptions);
                                     }
                                 },
                                 error: function(error) {
@@ -122,7 +123,7 @@ function processClientChanges(options) {
                                     success: options.success,
                                     error: options.error
                                 };
-                                processClientInserts(options);
+                                processClientInserts(insertOptions);
                             }
                         }
                     });
@@ -139,7 +140,7 @@ function processClientChanges(options) {
                         success: options.success,
                         error: options.error
                     };
-                    processServerChanges(options);
+                    processServerChanges(serverOptions);
                 }
 /*            } else {
                 //New Entry
@@ -175,7 +176,7 @@ function processClientChanges(options) {
             success: options.success,
             error: options.error
         };
-        processServerChanges(options);
+        processServerChanges(serverOptions);
     }
 }
                                 
@@ -205,7 +206,7 @@ function processClientInserts(options) {
                         success: options.success,
                         error: options.error
                     };
-                    processServerChanges(options);
+                    processServerChanges(serverOptions);
                 }
             },
             error: function(error) {
