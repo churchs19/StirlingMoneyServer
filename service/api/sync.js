@@ -13,6 +13,7 @@ exports.post = function (request, response) {
         }
         for (var i=0;i<body.items.length;i++) {
             var options = {
+                table:  request.service.tables.getTable(body.items[i].tableName),
                 tableName: body.items[i].tableName,
                 idField: body.items[i].keyField,
 //                user: request.user,
@@ -52,16 +53,15 @@ function GetAuthorizedUserIds(request) {
 function processClientChanges(options) {
     console.log("Processing client changes for table: " + options.tableName);
     console.log("Key Field Name = " + options.idField);
-    var table = request.service.tables.getTable(options.tableName);
     var serverChanges = [];
     var keys = [];
     var serverKeys = [];
-    if(values.length > 0) {
+    if(options.values.length > 0) {
     var valuesEnum = Enumerable.From(options.values);
     for(var i=0; i< options.values.length; i++) {
         keys.push(options.values[i][options.idField]);
     }
-    table.where(function(keysArray) {
+    options.table.where(function(keysArray) {
         return this[options.idField] in keysArray;
     }, keys)
         .read({
