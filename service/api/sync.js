@@ -58,7 +58,7 @@ function processClientChanges(options, request) {
     var table = request.service.tables.getTable(options.tableName);
     if(options.values.length > 0) {
         var valuesEnum = Enumerable.From(options.values);
-        var sql = "select * from " + options.tableName + " where " + options.idField + " in (";
+        var sql = "select * from stirlingmoney." + options.tableName + " where " + options.idField + " in (";
         for(var i=0; i< options.values.length; i++) {
             sql = sql + "'" + options.values[i][options.idField] + "',"
         }
@@ -199,7 +199,7 @@ function processClientInserts(options, request) {
 
 function processServerChanges(options, request) {
     console.log("Processing server changes for table: " + options.tableName);
-    var sql = "select * from " + options.tableName + " where editDateTime > ?";
+    var sql = "select * from stirlingmoney." + options.tableName + " where editDateTime > ?";
     if(options.processedKeys.length > 0) {
         sql = sql + " and " + options.idField + " not in (";
         for(var i=0; i < options.processedKeys.length; i++) {
