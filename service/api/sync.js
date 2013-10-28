@@ -191,7 +191,7 @@ function processClientInserts(options, request) {
                 }
             },
             error: function(error) {
-                options.error(error);   
+                options.error(error);
             }
         });
     });
