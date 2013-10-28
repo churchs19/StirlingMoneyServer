@@ -34,6 +34,7 @@ exports.post = function (request, response) {
                     } else {
                         response.send(statusCode, {message: error});
                     }
+                    break;
                 }
             };
             processClientChanges(options, request);
@@ -73,8 +74,10 @@ function processClientChanges(options, request) {
                                 console.error("User %j made an unauthorized attempt to edit record {" + item[options.idField] + "} in table " + options.tableName, options.user);
                                 options.error("Attempt made to edit unauthorized record", statusCodes.UNAUTHORIZED)
                             } else {
-                                serverKeys.push(item[options.idField]);
-                                var clientVal = valuesEnum.Where(function(it) { return it[options.idField] === item[options.idField]; }).FirstOrDefault(null);
+                                serverKeys.push(item[options.idField].toLowerCase());
+                                var clientVal = valuesEnum.Where(function(it) {
+                                    return it[options.idField].toLowerCase() === item[options.idField].toLowerCase();
+                                }).FirstOrDefault(null);
                                 if(clientVal && item.editDateTime < clientVal.editDateTime) {
                                     //Update the server entry
                                     item.userId = options.user.userId;
@@ -88,7 +91,7 @@ function processClientChanges(options, request) {
                                                     idField: options.idField,
                                                     user: options.user,
                                                     userIds: options.userIds,
-                                                    values: valuesEnum.Where(function(it) { return !(it[options.idField] in serverKeys); }).ToArray(),
+                                                    values: valuesEnum.Where(function(it) { return !(it[options.idField].toLowerCase() in serverKeys); }).ToArray(),
                                                     lastSyncDate: options.lastSyncDate,
                                                     processedKeys: serverKeys,
                                                     serverChanges: serverChanges,
@@ -111,7 +114,7 @@ function processClientChanges(options, request) {
                                             idField: options.idField,
                                             user: options.user,
                                             userIds: options.userIds,
-                                            values: valuesEnum.Where(function(it) { return !(it[options.idField] in serverKeys); }).ToArray(),
+                                            values: valuesEnum.Where(function(it) { return !(it[options.idField].toLowerCase() in serverKeys); }).ToArray(),
                                             lastSyncDate: options.lastSyncDate,
                                             processedKeys: serverKeys,
                                             serverChanges: serverChanges,
@@ -129,7 +132,7 @@ function processClientChanges(options, request) {
                             idField: options.idField,
                             user: options.user,
                             userIds: options.userIds,
-                            values: valuesEnum.Where(function(it) { return !(it[options.idField] in serverKeys); }).ToArray(),
+                            values: valuesEnum.Where(function(it) { return !(it[options.idField].toLowerCase() in serverKeys); }).ToArray(),
                             lastSyncDate: options.lastSyncDate,
                             processedKeys: serverKeys,
                             serverChanges: serverChanges,
@@ -177,8 +180,9 @@ function processClientInserts(options, request) {
             delete item.id;
             table.insert(item, {
                 success: function () {
-                    options.processedKeys.push(item[options.idField]);
+                    options.processedKeys.push(item[options.idField].toLowerCase());
                     console.log("Inserted item %j into table: " + options.tableName, item);
+                    options.serverChanges.push(item);
                     count++;
                     if(count===options.values.length) {
     //                    var serverOptions = {
