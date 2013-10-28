@@ -30,18 +30,21 @@ exports.post = function (request, response) {
                 error: function (error, statusCode) {
                     console.error("Error occurred processing request '%j' from user '%j':\n\n" + error, request.body, request.user);
                     if (!statusCode) {
-                        response.send(statusCodes.INTERNAL_SERVER_ERROR, {message : error});
+                        throw new { statusCode: statusCodes.INTERNAL_SERVER_ERROR, error: error };
                     } else {
-                        response.send(statusCode, {message: error});
+                        throw { statusCode: statusCode, error: error };
                     }
-                    break;
                 }
             };
             processClientChanges(options, request);
         });
     } catch (e) {
-        console.error("Unhandled Exception: " + e);
-        response.send(statusCodes.INTERNAL_SERVER_ERROR, {message : e});
+        if (e.statusCode) {
+            response.send(e.statusCode, {message:e.error});
+        } else {
+            console.error("Unhandled Exception: " + e);
+            response.send(statusCodes.INTERNAL_SERVER_ERROR, {message : e});
+        }
     }
 };
 
@@ -206,6 +209,7 @@ function processClientInserts(options, request) {
                 }
             });
         });
+    }
     catch (e) {
         options.error(e);
     }
