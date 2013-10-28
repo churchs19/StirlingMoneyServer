@@ -59,7 +59,7 @@ function processClientChanges(options, request) {
         for (var i=0; i< options.values.length; i++) {
             sql = sql + "'" + options.values[i][options.idField] + "',"
         }
-        sql = sql.substr(0, sql.length - 1);        
+        sql = sql.substr(0, sql.length - 1);
         sql = sql + ")";
         console.log(sql);
         request.service.mssql.query(sql, {
@@ -68,7 +68,7 @@ function processClientChanges(options, request) {
                 var count = 0;
                 if(results.length > 0) {
                     results.forEach(function(item) {
-                        if(item.userId === options.user.userId || item.userId in options.userIds) {
+                        if(item.userId !== options.user.userId || !(item.userId in options.userIds)) {
                             console.error("User %j made an unauthorized attempt to edit record {" + item[options.idField] + "} in table " + options.tableName, options.user);
                             options.error("Attempt made to edit unauthorized record", statusCodes.UNAUTHORIZED)
                         } else {
@@ -136,12 +136,12 @@ function processClientChanges(options, request) {
                         error: options.error
                     };
                     processClientInserts(insertOptions, request);
-                }                
+                }
             },
             error: function(error) {
                 console.log("Error processing update sql query: %s", sql);
                 options.error(error);
-            }	
+            }
         });
     } else {
 //        var serverOptions = {
@@ -159,9 +159,9 @@ function processClientChanges(options, request) {
         options.success({ tableName: options.tableName, changes: options.serverChanges });
     }
 }
-                                
+
 function processClientInserts(options, request) {
-    console.log("Processing client inserts for table: " + options.tableName);    
+    console.log("Processing client inserts for table: " + options.tableName);
     console.log("Insert options: %j", options);
     var count = 0;
     var table = request.service.tables.getTable(options.tableName);
@@ -221,7 +221,7 @@ function processServerChanges(options, request) {
 //    request.service.mssql.query(sql, [options.lastSyncDate], {
 //        success: function(results) {
 //            for(var i=0;i<results.length;i++) {
-//                options.serverChanges.push(results[i]);   
+//                options.serverChanges.push(results[i]);
 //            }
 //            console.log(options.serverChanges.length + " server changes in table: " + options.tableName);
 //            var retResults = {
