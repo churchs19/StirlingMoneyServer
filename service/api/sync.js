@@ -6,7 +6,7 @@ exports.post = function (request, response) {
     //   var push = request.service.push;
     try {
         console.log("/sync POST with request '%j'", request.body);
-//        console.log("/sync POST by user: %j", request.user)
+        console.log("/sync POST by user: %j", request.user)
         var body = request.body, count = 0, results = [];
         if (!body.lastSyncDate ||
                 !body.items) {
@@ -52,9 +52,7 @@ function GetAuthorizedUserIds(request) {
 }
 
 function processClientChanges(options, request) {
-    console.log("Processing client changes for table: " + options.tableName);
-//    console.log("Key Field Name = " + options.idField);
-//    console.log("Options: %j", options);
+    console.log("Processing user (%j) client changes for table: " + options.tableName, options.user);
     var serverChanges = [];
     var serverKeys = [];
     var table = request.service.tables.getTable(options.tableName);
@@ -73,56 +71,57 @@ function processClientChanges(options, request) {
                 var count = 0;
                 if(results.length > 0) {
                     results.forEach(function(item) {
-                        serverKeys.push(item[options.idField]);
-                        var clientVal = valuesEnum.Where(function(it) { return it[options.idField] === item[options.idField]; }).FirstOrDefault(null);
-                        if(!(item.userId in options.userIds)) {
-                            options.error("Unauthorized access", statusCodes.UNAUTHORIZED);
-                            return;
-                        }
-                        if(clientVal && item.editDateTime < clientVal.editDateTime) {
-                            //Update the server entry
-                            item.userId = options.user.userId;
-                            table.update(item, {
-                                success: function () {
-                                    console.log("Updated record {" + item[options.idField] + "} in " + options.tableName);
-                                    count++;
-                                    if(count===results.length) {
-                                        var insertOptions = {
-                                            tableName: options.tableName,
-                                            idField: options.idField,
-                                            user: options.user,
-                                            userIds: options.userIds,
-                                            values: valuesEnum.Where(function(it) { return !(it[options.idField] in serverKeys); }).ToArray(),
-                                            lastSyncDate: options.lastSyncDate,
-                                            processedKeys: serverKeys,
-                                            serverChanges: serverChanges,
-                                            success: options.success,
-                                            error: options.error
-                                        };
-                                        processClientInserts(insertOptions, request);
-                                    }
-                                },
-                                error: function(error) {
-                                    options.error(error);
-                                }
-                            });
+                        if(item.userId === options.user.userId || item.userId in options.userIds) {
+                            console.error("User %j made an unauthorized attempt to edit record {" + item[options.idField] + "} in table " + options.tableName, options.user);
+                            options.error("Attempt made to edit unauthorized record", statusCodes.UNAUTHORIZED)
                         } else {
-                            serverChanges.push(item);
-                            count++;
-                            if(count===results.length) {
-                                var insertOptions = {
-                                    tableName: options.tableName,
-                                    idField: options.idField,
-                                    user: options.user,
-                                    userIds: options.userIds,
-                                    values: valuesEnum.Where(function(it) { return !(it[options.idField] in serverKeys); }).ToArray(),
-                                    lastSyncDate: options.lastSyncDate,
-                                    processedKeys: serverKeys,
-                                    serverChanges: serverChanges,
-                                    success: options.success,
-                                    error: options.error
-                                };
-                                processClientInserts(insertOptions, request);
+                            serverKeys.push(item[options.idField]);
+                            var clientVal = valuesEnum.Where(function(it) { return it[options.idField] === item[options.idField]; }).FirstOrDefault(null);
+                            if(clientVal && item.editDateTime < clientVal.editDateTime) {
+                                //Update the server entry
+                                item.userId = options.user.userId;
+                                table.update(item, {
+                                    success: function () {
+                                        console.log("Updated record {" + item[options.idField] + "} in " + options.tableName);
+                                        count++;
+                                        if(count===results.length) {
+                                            var insertOptions = {
+                                                tableName: options.tableName,
+                                                idField: options.idField,
+                                                user: options.user,
+                                                userIds: options.userIds,
+                                                values: valuesEnum.Where(function(it) { return !(it[options.idField] in serverKeys); }).ToArray(),
+                                                lastSyncDate: options.lastSyncDate,
+                                                processedKeys: serverKeys,
+                                                serverChanges: serverChanges,
+                                                success: options.success,
+                                                error: options.error
+                                            };
+                                            processClientInserts(insertOptions, request);
+                                        }
+                                    },
+                                    error: function(error) {
+                                        options.error(error);
+                                    }
+                                });
+                            } else {
+                                serverChanges.push(item);
+                                count++;
+                                if(count===results.length) {
+                                    var insertOptions = {
+                                        tableName: options.tableName,
+                                        idField: options.idField,
+                                        user: options.user,
+                                        userIds: options.userIds,
+                                        values: valuesEnum.Where(function(it) { return !(it[options.idField] in serverKeys); }).ToArray(),
+                                        lastSyncDate: options.lastSyncDate,
+                                        processedKeys: serverKeys,
+                                        serverChanges: serverChanges,
+                                        success: options.success,
+                                        error: options.error
+                                    };
+                                    processClientInserts(insertOptions, request);
+                                }
                             }
                         }
                     });
