@@ -175,7 +175,6 @@ function processClientInserts(options, request) {
             success: function () {
                 options.processedKeys.push(item[options.idField]);
                 console.log("Inserted item %j into table: " + options.tableName, item);
-                options.serverChanges.push(item);
                 count++;
                 if(count===options.values.length) {
                     var serverOptions = {
@@ -208,6 +207,8 @@ function processServerChanges(options, request) {
     }
     if(options.processedKeys.length > 0) {
         sql = sql.substr(0, sql.length - 1);        
+    } else {
+        sql += "''";
     }
     sql = sql + ")";
     console.log(sql);
