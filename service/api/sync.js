@@ -92,7 +92,8 @@ function processClientChanges(options, request) {
                                             count++;
                                             if(count===results.length) {
                                                 var insertValues = valuesEnum.Where(function(it) { return !(it[options.idField].toLowerCase() in serverKeys); }).ToArray();
-                                                console.log("InserValues: %j", insertValues);
+                                                console.log("ServerKeys: %j", serverKeys);
+                                                console.log("InsertValues: %j", insertValues);
                                                 var insertOptions = {                                                    
                                                     tableName: options.tableName,
                                                     idField: options.idField,
@@ -117,7 +118,7 @@ function processClientChanges(options, request) {
                                     count++;
                                     if(count===results.length) {
                                         var insertValues = valuesEnum.Where(function(it) { return !(it[options.idField].toLowerCase() in serverKeys); }).ToArray();
-                                        console.log("ServerKeys: %j");
+                                        console.log("ServerKeys: %j", serverKeys);
                                         console.log("InsertValues: %j", insertValues);
                                         var insertOptions = {
                                             tableName: options.tableName,
@@ -138,7 +139,8 @@ function processClientChanges(options, request) {
                         });
                     } else {
                         var insertValues = valuesEnum.Where(function(it) { return !(it[options.idField].toLowerCase() in serverKeys); }).ToArray();
-                        console.log("InserValues: %j", insertValues);
+                        console.log("InsertValues: %j", insertValues);
+                        console.log("ServerKeys: %j", serverKeys);
                         var insertOptions = {
                             tableName: options.tableName,
                             idField: options.idField,
