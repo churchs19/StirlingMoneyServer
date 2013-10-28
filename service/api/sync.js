@@ -84,6 +84,7 @@ function processClientChanges(options, request) {
                                 console.log("ClientVal: %j", clientVal);
                                 if(clientVal && item.editDateTime < clientVal.editDateTime) {
                                     //Update the server entry
+                                    console.log("Updating record");
                                     item.userId = options.user.userId;
                                     table.update(item, {
                                         success: function () {
@@ -116,7 +117,8 @@ function processClientChanges(options, request) {
                                     count++;
                                     if(count===results.length) {
                                         var insertValues = valuesEnum.Where(function(it) { return !(it[options.idField].toLowerCase() in serverKeys); }).ToArray();
-                                        console.log("InserValues: %j", insertValues);
+                                        console.log("ServerKeys: %j");
+                                        console.log("InsertValues: %j", insertValues);
                                         var insertOptions = {
                                             tableName: options.tableName,
                                             idField: options.idField,
