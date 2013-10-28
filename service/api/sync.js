@@ -5,8 +5,7 @@ exports.post = function (request, response) {
     //   var tables = request.service.tables;
     //   var push = request.service.push;
     try {
-        console.log("/sync POST with request '%j' - Script Updated 10/27 @ 10:43 pm", request.body);
-        console.log("/sync POST by user: %j", request.user)
+        console.log("/sync POST with request '%j' by user %s", [request.body, request.user]);
         var body = request.body, count = 0, results = [];
         if (!body.lastSyncDate ||
                 !body.items) {
@@ -142,28 +141,30 @@ function processClientChanges(options, request) {
                 }                
             },
             error: function(error) {
+                console.log("Error processing update sql query: %s", sql);
                 options.error(error);
             }	
         });
     } else {
-        var serverOptions = {
-            tableName: options.tableName,
-            idField: options.idField,
-            user: options.user,
-            userIds: options.userIds,
-            lastSyncDate: options.lastSyncDate,
-            processedKeys: serverKeys,
-            serverChanges: serverChanges,
-            success: options.success,
-            error: options.error
-        };
-        processServerChanges(serverOptions, request);
+//        var serverOptions = {
+//            tableName: options.tableName,
+//            idField: options.idField,
+//            user: options.user,
+//            userIds: options.userIds,
+//            lastSyncDate: options.lastSyncDate,
+//            processedKeys: serverKeys,
+//            serverChanges: serverChanges,
+//            success: options.success,
+//            error: options.error
+//        };
+//        processServerChanges(serverOptions, request);
+        options.success({ tableName: options.tableName, changes: options.serverChanges });
     }
 }
                                 
 function processClientInserts(options, request) {
     console.log("Processing client inserts for table: " + options.tableName);    
-//    console.log("Options: %j", options);
+    console.log("Insert options: %j"), options);
     var count = 0;
     var table = request.service.tables.getTable(options.tableName);
     options.values.forEach(function(item) {
@@ -176,21 +177,23 @@ function processClientInserts(options, request) {
                 console.log("Inserted item %j into table: " + options.tableName, item);
                 count++;
                 if(count===options.values.length) {
-                    var serverOptions = {
-                        tableName: options.tableName,
-                        idField: options.idField,
-                        user: options.user,
-                        userIds: options.userIds,
-                        lastSyncDate: options.lastSyncDate,
-                        processedKeys: options.processedKeys,
-                        serverChanges: options.serverChanges,
-                        success: options.success,
-                        error: options.error
-                    };
-                    processServerChanges(serverOptions, request);
+//                    var serverOptions = {
+//                        tableName: options.tableName,
+//                        idField: options.idField,
+//                        user: options.user,
+//                        userIds: options.userIds,
+//                        lastSyncDate: options.lastSyncDate,
+//                        processedKeys: options.processedKeys,
+//                        serverChanges: options.serverChanges,
+//                        success: options.success,
+//                        error: options.error
+//                    };
+//                    processServerChanges(serverOptions, request);
+                    options.success({ tableName: options.tableName, changes: options.serverChanges });
                 }
             },
             error: function(error) {
+                console.log("Failed to insert item %j into table: %s", [item, options.tableName]);
                 options.error(error);
             }
         });
@@ -198,39 +201,40 @@ function processClientInserts(options, request) {
 }
 
 function processServerChanges(options, request) {
-    console.log("Processing server changes for table: " + options.tableName);
-    var sql = "select * from stirlingmoney." + options.tableName + " where editDateTime > ?";
-    if(options.processedKeys.length > 0) {
-        sql = sql + " and " + options.idField + " not in (";
-        for(var i=0; i < options.processedKeys.length; i++) {
-            sql = sql + "'" + options.processedKeys[i] + "',"
-        }
-        sql = sql.substr(0, sql.length - 1);
-        sql = sql + ")";
-    }
-    if(options.userIds.length > 0) {
-        sql = sql + " and userId in (";
-        for(var j=0; j<options.userIds.length; j++) {
-            sql = sql + "'" + options.userIds[j] + "',"
-        }
-        sql = sql.substr(0, sql.length - 1);
-        sql = sql + ")";
-    }
-    console.log(sql);
-    request.service.mssql.query(sql, [options.lastSyncDate], {
-        success: function(results) {
-            for(var i=0;i<results.length;i++) {
-                options.serverChanges.push(results[i]);   
-            }
-            console.log(options.serverChanges.length + " server changes in table: " + options.tableName);
-            var retResults = {
-                tableName: options.tableName,
-                changes: options.serverChanges
-            }
-            options.success(retResults);
-        },
-        error: function(error) {
-            options.error(error);
-        }
-    });
+//    console.log("Processing server changes for table: " + options.tableName);
+//    var sql = "select * from stirlingmoney." + options.tableName + " where editDateTime > ?";
+//    if(options.processedKeys.length > 0) {
+//        sql = sql + " and " + options.idField + " not in (";
+//        for(var i=0; i < options.processedKeys.length; i++) {
+//            sql = sql + "'" + options.processedKeys[i] + "',"
+//        }
+//        sql = sql.substr(0, sql.length - 1);
+//        sql = sql + ")";
+//    }
+//    if(options.userIds.length > 0) {
+//        sql = sql + " and userId in (";
+//        for(var j=0; j<options.userIds.length; j++) {
+//            sql = sql + "'" + options.userIds[j] + "',"
+//        }
+//        sql = sql.substr(0, sql.length - 1);
+//        sql = sql + ")";
+//    }
+//    console.log(sql);
+//    request.service.mssql.query(sql, [options.lastSyncDate], {
+//        success: function(results) {
+//            for(var i=0;i<results.length;i++) {
+//                options.serverChanges.push(results[i]);   
+//            }
+//            console.log(options.serverChanges.length + " server changes in table: " + options.tableName);
+//            var retResults = {
+//                tableName: options.tableName,
+//                changes: options.serverChanges
+//            }
+//            options.success(retResults);
+//        },
+//        error: function(error) {
+//            options.error(error);
+//        }
+//    });
+//    options.success
 }
