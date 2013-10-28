@@ -129,18 +129,19 @@ function processClientChanges(options, request) {
                         }
                     });
                 } else {
-                    var serverOptions = {
+                    var insertOptions = {
                         tableName: options.tableName,
                         idField: options.idField,
                         user: options.user,
                         userIds: options.userIds,
+                        values: valuesEnum.Where(function(it) { return !(it[options.idField] in serverKeys); }).ToArray(),
                         lastSyncDate: options.lastSyncDate,
                         processedKeys: serverKeys,
                         serverChanges: serverChanges,
                         success: options.success,
                         error: options.error
                     };
-                    processServerChanges(serverOptions, request);
+                    processClientInserts(insertOptions, request);
                 }                
             },
             error: function(error) {
