@@ -200,17 +200,22 @@ function processClientInserts(options, request) {
 
 function processServerChanges(options, request) {
     console.log("Processing server changes for table: " + options.tableName);
-//    console.log("Options: %j", options);
-    var sql = "select * from " + options.tableName + " where editDateTime > ? and " + options.idField + " not in (";
-    for(var i=0; i< options.processedKeys.length; i++) {
-        sql = sql + "'" + options.processedKeys[i] + "',"
-    }
+    var sql = "select * from " + options.tableName + " where editDateTime > ?";
     if(options.processedKeys.length > 0) {
-        sql = sql.substr(0, sql.length - 1);        
-    } else {
-        sql += "''";
+        sql = sql + " and " + options.idField + " not in (";
+        for(var i=0; i < options.processedKeys.length; i++) {
+            sql = sql + "'" + options.processedKeys[i] + "',"
+        }
+        sql = sql.substr(0, sql.length - 1);
     }
     sql = sql + ")";
+    if(options.userIds.length > 0) {
+        sql = sql + " and userId in (";
+        for(var j=0; j<options.userIds.length; j++) {
+            sql = sql + "'" + options.userIds[j] + "',"
+        }
+        sql = sql.substr(0, sql.length - 1);
+    }
     console.log(sql);
     request.service.mssql.query(sql, [options.lastSyncDate], {
         success: function(results) {
