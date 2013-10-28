@@ -5,7 +5,7 @@ exports.post = function (request, response) {
     //   var tables = request.service.tables;
     //   var push = request.service.push;
     try {
-        console.log("/sync POST with request '%j'", request.body);
+        console.log("/sync POST with request '%j' - Script Updated 10/27 @ 10:43 pm", request.body);
         console.log("/sync POST by user: %j", request.user)
         var body = request.body, count = 0, results = [];
         if (!body.lastSyncDate ||
