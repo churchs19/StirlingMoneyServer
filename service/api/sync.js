@@ -20,16 +20,16 @@ exports.post = function (request, response) {
                 userIds: [],
                 values: item.values,
                 lastSyncDate: body.lastSyncDate,
-                success: function(serverChanges) {
+                success: function (serverChanges) {
                     results.push(serverChanges);
-                    count++;
-                    if(count === body.items.length) {
-                        response.send(statusCodes.OK, results);   
+                    count = count + 1;
+                    if (count === body.items.length) {
+                        response.send(statusCodes.OK, results);
                     }
                 },
-                error: function(error, statusCode) {
+                error: function (error, statusCode) {
                     console.error("Error occurred processing request '%j' from user '%j':\n\n" + error, request.body, request.user);
-                    if(!statusCode) {
+                    if (!statusCode) {
                         response.send(statusCodes.INTERNAL_SERVER_ERROR, {message : error});
                     } else {
                         response.send(statusCode, {message: error});
@@ -38,11 +38,11 @@ exports.post = function (request, response) {
             };
             processClientChanges(options, request);
         });
-    } catch(e) {
+    } catch (e) {
         console.error("Unhandled Exception: " + e);
         response.send(statusCodes.INTERNAL_SERVER_ERROR, {message : e});
     }
-}
+};
 
 function GetAuthorizedUserIds(request) {
     var ids = [];
@@ -52,13 +52,11 @@ function GetAuthorizedUserIds(request) {
 
 function processClientChanges(options, request) {
     console.log("Processing user (%j) client changes for table: " + options.tableName, options.user);
-    var serverChanges = [];
-    var serverKeys = [];
-    var table = request.service.tables.getTable(options.tableName);
-    if(options.values.length > 0) {
+    var serverChanges = [], serverKeys = [], table = request.service.tables.getTable(options.tableName);
+    if (options.values.length > 0) {
         var valuesEnum = Enumerable.From(options.values);
         var sql = "select * from stirlingmoney." + options.tableName + " where " + options.idField + " in (";
-        for(var i=0; i< options.values.length; i++) {
+        for (var i=0; i< options.values.length; i++) {
             sql = sql + "'" + options.values[i][options.idField] + "',"
         }
         sql = sql.substr(0, sql.length - 1);        
@@ -164,7 +162,7 @@ function processClientChanges(options, request) {
                                 
 function processClientInserts(options, request) {
     console.log("Processing client inserts for table: " + options.tableName);    
-    console.log("Insert options: %j"), options);
+    console.log("Insert options: %j", options);
     var count = 0;
     var table = request.service.tables.getTable(options.tableName);
     options.values.forEach(function(item) {
