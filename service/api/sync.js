@@ -75,7 +75,7 @@ function processClientChanges(options, request) {
                         results.forEach(function(item) {
                             if(item.userId !== options.user.userId && !(item.userId in options.userIds)) {
                                 console.error("User %j made an unauthorized attempt to edit record {" + item[options.idField] + "} in table " + options.tableName, options.user);
-                                options.error("Attempt made to edit unauthorized record", statusCodes.UNAUTHORIZED)
+                                throw { error: new Error("Attempt made to edit unauthorized record"), statusCode: statusCodes.UNAUTHORIZED};
                             } else {
                                 serverKeys.push(item[options.idField].toLowerCase());
                                 var clientVal = valuesEnum.Where(function(it) {
