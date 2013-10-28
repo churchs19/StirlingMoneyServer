@@ -207,14 +207,15 @@ function processServerChanges(options, request) {
             sql = sql + "'" + options.processedKeys[i] + "',"
         }
         sql = sql.substr(0, sql.length - 1);
+        sql = sql + ")";
     }
-    sql = sql + ")";
     if(options.userIds.length > 0) {
         sql = sql + " and userId in (";
         for(var j=0; j<options.userIds.length; j++) {
             sql = sql + "'" + options.userIds[j] + "',"
         }
         sql = sql.substr(0, sql.length - 1);
+        sql = sql + ")";
     }
     console.log(sql);
     request.service.mssql.query(sql, [options.lastSyncDate], {
