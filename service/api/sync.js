@@ -51,151 +51,160 @@ function GetAuthorizedUserIds(request) {
 }
 
 function processClientChanges(options, request) {
-    console.log("Processing user (%j) client changes for table: " + options.tableName, options.user);
-    var serverChanges = [], serverKeys = [], table = request.service.tables.getTable(options.tableName);
-    if (options.values.length > 0) {
-        var valuesEnum = Enumerable.From(options.values);
-        var sql = "select * from stirlingmoney." + options.tableName + " where " + options.idField + " in (";
-        for (var i=0; i< options.values.length; i++) {
-            sql = sql + "'" + options.values[i][options.idField] + "',"
-        }
-        sql = sql.substr(0, sql.length - 1);
-        sql = sql + ")";
-        console.log(sql);
-        request.service.mssql.query(sql, {
-            success: function(results) {
-                console.log(results.length + " results matching client keys in " + options.tableName);
-                var count = 0;
-                if(results.length > 0) {
-                    results.forEach(function(item) {
-                        if(item.userId !== options.user.userId && !(item.userId in options.userIds)) {
-                            console.error("User %j made an unauthorized attempt to edit record {" + item[options.idField] + "} in table " + options.tableName, options.user);
-                            options.error("Attempt made to edit unauthorized record", statusCodes.UNAUTHORIZED)
-                        } else {
-                            serverKeys.push(item[options.idField]);
-                            var clientVal = valuesEnum.Where(function(it) { return it[options.idField] === item[options.idField]; }).FirstOrDefault(null);
-                            if(clientVal && item.editDateTime < clientVal.editDateTime) {
-                                //Update the server entry
-                                item.userId = options.user.userId;
-                                table.update(item, {
-                                    success: function () {
-                                        console.log("Updated record {" + item[options.idField] + "} in " + options.tableName);
-                                        count++;
-                                        if(count===results.length) {
-                                            var insertOptions = {
-                                                tableName: options.tableName,
-                                                idField: options.idField,
-                                                user: options.user,
-                                                userIds: options.userIds,
-                                                values: valuesEnum.Where(function(it) { return !(it[options.idField] in serverKeys); }).ToArray(),
-                                                lastSyncDate: options.lastSyncDate,
-                                                processedKeys: serverKeys,
-                                                serverChanges: serverChanges,
-                                                success: options.success,
-                                                error: options.error
-                                            };
-                                            processClientInserts(insertOptions, request);
-                                        }
-                                    },
-                                    error: function(error) {
-                                        options.error(error);
-                                    }
-                                });
+    try {
+        console.log("Processing user (%j) client changes for table: " + options.tableName, options.user);
+        var serverChanges = [], serverKeys = [], table = request.service.tables.getTable(options.tableName);
+        if (options.values.length > 0) {
+            var valuesEnum = Enumerable.From(options.values);
+            var sql = "select * from stirlingmoney." + options.tableName + " where " + options.idField + " in (";
+            for (var i=0; i< options.values.length; i++) {
+                sql = sql + "'" + options.values[i][options.idField] + "',"
+            }
+            sql = sql.substr(0, sql.length - 1);
+            sql = sql + ")";
+            console.log(sql);
+            request.service.mssql.query(sql, {
+                success: function(results) {
+                    console.log(results.length + " results matching client keys in " + options.tableName);
+                    var count = 0;
+                    if(results.length > 0) {
+                        results.forEach(function(item) {
+                            if(item.userId !== options.user.userId && !(item.userId in options.userIds)) {
+                                console.error("User %j made an unauthorized attempt to edit record {" + item[options.idField] + "} in table " + options.tableName, options.user);
+                                options.error("Attempt made to edit unauthorized record", statusCodes.UNAUTHORIZED)
                             } else {
-                                serverChanges.push(item);
-                                count++;
-                                if(count===results.length) {
-                                    var insertOptions = {
-                                        tableName: options.tableName,
-                                        idField: options.idField,
-                                        user: options.user,
-                                        userIds: options.userIds,
-                                        values: valuesEnum.Where(function(it) { return !(it[options.idField] in serverKeys); }).ToArray(),
-                                        lastSyncDate: options.lastSyncDate,
-                                        processedKeys: serverKeys,
-                                        serverChanges: serverChanges,
-                                        success: options.success,
-                                        error: options.error
-                                    };
-                                    processClientInserts(insertOptions, request);
+                                serverKeys.push(item[options.idField]);
+                                var clientVal = valuesEnum.Where(function(it) { return it[options.idField] === item[options.idField]; }).FirstOrDefault(null);
+                                if(clientVal && item.editDateTime < clientVal.editDateTime) {
+                                    //Update the server entry
+                                    item.userId = options.user.userId;
+                                    table.update(item, {
+                                        success: function () {
+                                            console.log("Updated record {" + item[options.idField] + "} in " + options.tableName);
+                                            count++;
+                                            if(count===results.length) {
+                                                var insertOptions = {
+                                                    tableName: options.tableName,
+                                                    idField: options.idField,
+                                                    user: options.user,
+                                                    userIds: options.userIds,
+                                                    values: valuesEnum.Where(function(it) { return !(it[options.idField] in serverKeys); }).ToArray(),
+                                                    lastSyncDate: options.lastSyncDate,
+                                                    processedKeys: serverKeys,
+                                                    serverChanges: serverChanges,
+                                                    success: options.success,
+                                                    error: options.error
+                                                };
+                                                processClientInserts(insertOptions, request);
+                                            }
+                                        },
+                                        error: function(error) {
+                                            throw error;
+                                        }
+                                    });
+                                } else {
+                                    serverChanges.push(item);
+                                    count++;
+                                    if(count===results.length) {
+                                        var insertOptions = {
+                                            tableName: options.tableName,
+                                            idField: options.idField,
+                                            user: options.user,
+                                            userIds: options.userIds,
+                                            values: valuesEnum.Where(function(it) { return !(it[options.idField] in serverKeys); }).ToArray(),
+                                            lastSyncDate: options.lastSyncDate,
+                                            processedKeys: serverKeys,
+                                            serverChanges: serverChanges,
+                                            success: options.success,
+                                            error: options.error
+                                        };
+                                        processClientInserts(insertOptions, request);
+                                    }
                                 }
                             }
-                        }
-                    });
-                } else {
-                    var insertOptions = {
-                        tableName: options.tableName,
-                        idField: options.idField,
-                        user: options.user,
-                        userIds: options.userIds,
-                        values: valuesEnum.Where(function(it) { return !(it[options.idField] in serverKeys); }).ToArray(),
-                        lastSyncDate: options.lastSyncDate,
-                        processedKeys: serverKeys,
-                        serverChanges: serverChanges,
-                        success: options.success,
-                        error: options.error
-                    };
-                    processClientInserts(insertOptions, request);
+                        });
+                    } else {
+                        var insertOptions = {
+                            tableName: options.tableName,
+                            idField: options.idField,
+                            user: options.user,
+                            userIds: options.userIds,
+                            values: valuesEnum.Where(function(it) { return !(it[options.idField] in serverKeys); }).ToArray(),
+                            lastSyncDate: options.lastSyncDate,
+                            processedKeys: serverKeys,
+                            serverChanges: serverChanges,
+                            success: options.success,
+                            error: options.error
+                        };
+                        processClientInserts(insertOptions, request);
+                    }
+                },
+                error: function(error) {
+                    console.log("Error processing update sql query: %s", sql);
+                    throw error;
                 }
-            },
-            error: function(error) {
-                console.log("Error processing update sql query: %s", sql);
-                options.error(error);
-            }
-        });
-    } else {
-//        var serverOptions = {
-//            tableName: options.tableName,
-//            idField: options.idField,
-//            user: options.user,
-//            userIds: options.userIds,
-//            lastSyncDate: options.lastSyncDate,
-//            processedKeys: serverKeys,
-//            serverChanges: serverChanges,
-//            success: options.success,
-//            error: options.error
-//        };
-//        processServerChanges(serverOptions, request);
-        options.success({ tableName: options.tableName, changes: options.serverChanges });
+            });
+        } else {
+    //        var serverOptions = {
+    //            tableName: options.tableName,
+    //            idField: options.idField,
+    //            user: options.user,
+    //            userIds: options.userIds,
+    //            lastSyncDate: options.lastSyncDate,
+    //            processedKeys: serverKeys,
+    //            serverChanges: serverChanges,
+    //            success: options.success,
+    //            error: options.error
+    //        };
+    //        processServerChanges(serverOptions, request);
+            options.success({ tableName: options.tableName, changes: options.serverChanges });
+        }
+    } catch (e) {
+        options.error(e);
     }
 }
 
 function processClientInserts(options, request) {
-    console.log("Processing client inserts for table: " + options.tableName);
-    console.log("Insert options: %j", options);
-    var count = 0;
-    var table = request.service.tables.getTable(options.tableName);
-    options.values.forEach(function(item) {
-        item.userId = options.user.userId;
-        item.editDateTime = new Date();
-        delete item.id;
-        table.insert(item, {
-            success: function () {
-                options.processedKeys.push(item[options.idField]);
-                console.log("Inserted item %j into table: " + options.tableName, item);
-                count++;
-                if(count===options.values.length) {
-//                    var serverOptions = {
-//                        tableName: options.tableName,
-//                        idField: options.idField,
-//                        user: options.user,
-//                        userIds: options.userIds,
-//                        lastSyncDate: options.lastSyncDate,
-//                        processedKeys: options.processedKeys,
-//                        serverChanges: options.serverChanges,
-//                        success: options.success,
-//                        error: options.error
-//                    };
-//                    processServerChanges(serverOptions, request);
-                    options.success({ tableName: options.tableName, changes: options.serverChanges });
+    try
+    {
+        console.log("Processing client inserts for table: " + options.tableName);
+        console.log("Insert options: %j", options);
+        var count = 0;
+        var table = request.service.tables.getTable(options.tableName);
+        options.values.forEach(function(item) {
+            item.userId = options.user.userId;
+            item.editDateTime = new Date();
+            delete item.id;
+            table.insert(item, {
+                success: function () {
+                    options.processedKeys.push(item[options.idField]);
+                    console.log("Inserted item %j into table: " + options.tableName, item);
+                    count++;
+                    if(count===options.values.length) {
+    //                    var serverOptions = {
+    //                        tableName: options.tableName,
+    //                        idField: options.idField,
+    //                        user: options.user,
+    //                        userIds: options.userIds,
+    //                        lastSyncDate: options.lastSyncDate,
+    //                        processedKeys: options.processedKeys,
+    //                        serverChanges: options.serverChanges,
+    //                        success: options.success,
+    //                        error: options.error
+    //                    };
+    //                    processServerChanges(serverOptions, request);
+                        options.success({ tableName: options.tableName, changes: options.serverChanges });
+                    }
+                },
+                error: function(error) {
+                    console.log("Failed to insert item %j into table: %s", [item, options.tableName]);
+                    throw error;
                 }
-            },
-            error: function(error) {
-                console.log("Failed to insert item %j into table: %s", [item, options.tableName]);
-                options.error(error);
-            }
+            });
         });
-    });
+    catch (e) {
+        options.error(e);
+    }
 }
 
 function processServerChanges(options, request) {
