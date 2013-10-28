@@ -91,7 +91,8 @@ function processClientChanges(options, request) {
                                             console.log("Updated record {" + item[options.idField] + "} in " + options.tableName);
                                             count++;
                                             if(count===results.length) {
-                                                var insertValues = valuesEnum.Where(function(it) { return !(it[options.idField].toLowerCase() in serverKeys); }).ToArray();
+                                                var serverEnum = Enumerable.From(serverKeys);
+                                                var insertValues = valuesEnum.Where(function(it) { return !serverEnum.Contains(function(it) { return it[options.idField].toLowerCase(); }) }).ToArray();
                                                 console.log("ServerKeys: %j", serverKeys);
                                                 console.log("InsertValues: %j", insertValues);
                                                 var insertOptions = {                                                    
@@ -118,7 +119,8 @@ function processClientChanges(options, request) {
                                     serverChanges.push(item);
                                     count++;
                                     if(count===results.length) {
-                                        var insertValues = valuesEnum.Where(function(it) { return !(it[options.idField].toLowerCase() in serverKeys); }).ToArray();
+                                        var serverEnum = Enumerable.From(serverKeys);
+                                        var insertValues = valuesEnum.Where(function(it) { return !serverEnum.Contains(function(it) { return it[options.idField].toLowerCase(); }) }).ToArray();
                                         console.log("ServerKeys: %j", serverKeys);
                                         console.log("InsertValues: %j", insertValues);
                                         var insertOptions = {
@@ -139,7 +141,8 @@ function processClientChanges(options, request) {
                             }
                         });
                     } else {
-                        var insertValues = valuesEnum.Where(function(it) { return !(it[options.idField].toLowerCase() in serverKeys); }).ToArray();
+                        var serverEnum = Enumerable.From(serverKeys);
+                        var insertValues = valuesEnum.Where(function(it) { return !serverEnum.Contains(function(it) { return it[options.idField].toLowerCase(); }) }).ToArray();
                         console.log("InsertValues: %j", insertValues);
                         console.log("ServerKeys: %j", serverKeys);
                         var insertOptions = {
