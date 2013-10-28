@@ -68,7 +68,7 @@ function processClientChanges(options, request) {
                 var count = 0;
                 if(results.length > 0) {
                     results.forEach(function(item) {
-                        if(item.userId !== options.user.userId || !(item.userId in options.userIds)) {
+                        if(item.userId !== options.user.userId && !(item.userId in options.userIds)) {
                             console.error("User %j made an unauthorized attempt to edit record {" + item[options.idField] + "} in table " + options.tableName, options.user);
                             options.error("Attempt made to edit unauthorized record", statusCodes.UNAUTHORIZED)
                         } else {
