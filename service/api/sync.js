@@ -114,6 +114,7 @@ function processClientChanges(options, request) {
                                         }
                                     });
                                 } else {
+                                    console.log("Server value newer than client value");
                                     serverChanges.push(item);
                                     count++;
                                     if(count===results.length) {
