@@ -64,9 +64,7 @@ function processClientChanges(options, request) {
         for(var i=0; i< options.values.length; i++) {
             sql = sql + "'" + options.values[i][options.idField] + "',"
         }
-        if(options.values.length > 0) {
-            sql = sql.substr(0, sql.length - 1);        
-        }
+        sql = sql.substr(0, sql.length - 1);        
         sql = sql + ")";
         console.log(sql);
         request.service.mssql.query(sql, {
