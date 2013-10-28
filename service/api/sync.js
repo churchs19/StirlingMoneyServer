@@ -30,7 +30,7 @@ exports.post = function (request, response) {
                 error: function (error, statusCode) {
                     console.error("Error occurred processing request '%j' from user '%j':\n\n" + error, request.body, request.user);
                     if (!statusCode) {
-                        throw new { statusCode: statusCodes.INTERNAL_SERVER_ERROR, error: error };
+                        throw { statusCode: statusCodes.INTERNAL_SERVER_ERROR, error: error };
                     } else {
                         throw { statusCode: statusCode, error: error };
                     }
@@ -73,11 +73,11 @@ function processClientChanges(options, request) {
                     var count = 0;
                     if(results.length > 0) {
                         results.forEach(function(item) {
+                            serverKeys.push(item[options.idField].toLowerCase());                            
                             if(item.userId !== options.user.userId && !(item.userId in options.userIds)) {
                                 console.error("User %j made an unauthorized attempt to edit record {" + item[options.idField] + "} in table " + options.tableName, options.user);
                                 throw { error: new Error("Attempt made to edit unauthorized record"), statusCode: statusCodes.UNAUTHORIZED};
                             } else {
-                                serverKeys.push(item[options.idField].toLowerCase());
                                 var clientVal = valuesEnum.Where(function(it) {
                                     return it[options.idField].toLowerCase() === item[options.idField].toLowerCase();
                                 }).FirstOrDefault(null);
@@ -90,12 +90,14 @@ function processClientChanges(options, request) {
                                             console.log("Updated record {" + item[options.idField] + "} in " + options.tableName);
                                             count++;
                                             if(count===results.length) {
-                                                var insertOptions = {
+                                                var insertValues = valuesEnum.Where(function(it) { return !(it[options.idField].toLowerCase() in serverKeys); }).ToArray();
+                                                console.log("InserValues: %j", insertValues);
+                                                var insertOptions = {                                                    
                                                     tableName: options.tableName,
                                                     idField: options.idField,
                                                     user: options.user,
                                                     userIds: options.userIds,
-                                                    values: valuesEnum.Where(function(it) { return !(it[options.idField].toLowerCase() in serverKeys); }).ToArray(),
+                                                    values: insertValues,
                                                     lastSyncDate: options.lastSyncDate,
                                                     processedKeys: serverKeys,
                                                     serverChanges: serverChanges,
@@ -113,12 +115,14 @@ function processClientChanges(options, request) {
                                     serverChanges.push(item);
                                     count++;
                                     if(count===results.length) {
+                                        var insertValues = valuesEnum.Where(function(it) { return !(it[options.idField].toLowerCase() in serverKeys); }).ToArray();
+                                        console.log("InserValues: %j", insertValues);
                                         var insertOptions = {
                                             tableName: options.tableName,
                                             idField: options.idField,
                                             user: options.user,
                                             userIds: options.userIds,
-                                            values: valuesEnum.Where(function(it) { return !(it[options.idField].toLowerCase() in serverKeys); }).ToArray(),
+                                            values: insertValues,
                                             lastSyncDate: options.lastSyncDate,
                                             processedKeys: serverKeys,
                                             serverChanges: serverChanges,
@@ -131,12 +135,14 @@ function processClientChanges(options, request) {
                             }
                         });
                     } else {
+                        var insertValues = valuesEnum.Where(function(it) { return !(it[options.idField].toLowerCase() in serverKeys); }).ToArray();
+                        console.log("InserValues: %j", insertValues);
                         var insertOptions = {
                             tableName: options.tableName,
                             idField: options.idField,
                             user: options.user,
                             userIds: options.userIds,
-                            values: valuesEnum.Where(function(it) { return !(it[options.idField].toLowerCase() in serverKeys); }).ToArray(),
+                            values: insertValues,
                             lastSyncDate: options.lastSyncDate,
                             processedKeys: serverKeys,
                             serverChanges: serverChanges,
@@ -175,7 +181,7 @@ function processClientInserts(options, request) {
     try
     {
         console.log("Processing client inserts for table: " + options.tableName);
-        console.log("Insert options: %j", options);
+        console.log("Inserting values: %j", options.values);
         var count = 0;
         var table = request.service.tables.getTable(options.tableName);
         options.values.forEach(function(item) {
