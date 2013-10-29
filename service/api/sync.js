@@ -120,7 +120,7 @@ function processClientChanges(options, request) {
                                     count++;
                                     if(count===results.length) {
                                         var serverEnum = Enumerable.From(serverKeys);
-                                        var insertValues = valuesEnum.Where(function(it) { return !serverEnum.Contains(function(it) { return it[options.idField].toLowerCase(); }) }).ToArray();
+                                        var insertValues = valuesEnum.Where(function(it) { return !serverEnum.Contains(it[options.idField].toLowerCase()); }).ToArray();
                                         console.log("ServerKeys: %j", serverKeys);
                                         console.log("InsertValues: %j", insertValues);
                                         var insertOptions = {
