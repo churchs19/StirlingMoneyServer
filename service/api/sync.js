@@ -73,7 +73,7 @@ function processClientChanges(options, request) {
                     var count = 0;
                     if(results.length > 0) {
                         results.forEach(function(item) {
-                            serverKeys.push(item[options.idField].toLowerCase());                            
+                            serverKeys.push(item[options.idField].toLowerCase());
                             if(item.userId !== options.user.userId && !(item.userId in options.userIds)) {
                                 console.error("User %j made an unauthorized attempt to edit record {" + item[options.idField] + "} in table " + options.tableName, options.user);
                                 throw { error: new Error("Attempt made to edit unauthorized record"), statusCode: statusCodes.UNAUTHORIZED};
@@ -91,7 +91,7 @@ function processClientChanges(options, request) {
                                             if(count===results.length) {
                                                 var serverEnum = Enumerable.From(serverKeys);
                                                 var insertValues = valuesEnum.Where(function(it) { return !serverEnum.Contains(it[options.idField].toLowerCase()); }).ToArray();
-                                                var insertOptions = {                                                    
+                                                var insertOptions = {
                                                     tableName: options.tableName,
                                                     idField: options.idField,
                                                     user: options.user,
@@ -237,40 +237,38 @@ function processClientInserts(options, request) {
 }
 
 function processServerChanges(options, request) {
-//    console.log("Processing server changes for table: " + options.tableName);
-//    var sql = "select * from stirlingmoney." + options.tableName + " where editDateTime > ?";
-//    if(options.processedKeys.length > 0) {
-//        sql = sql + " and " + options.idField + " not in (";
-//        for(var i=0; i < options.processedKeys.length; i++) {
-//            sql = sql + "'" + options.processedKeys[i] + "',"
-//        }
-//        sql = sql.substr(0, sql.length - 1);
-//        sql = sql + ")";
-//    }
-//    if(options.userIds.length > 0) {
-//        sql = sql + " and userId in (";
-//        for(var j=0; j<options.userIds.length; j++) {
-//            sql = sql + "'" + options.userIds[j] + "',"
-//        }
-//        sql = sql.substr(0, sql.length - 1);
-//        sql = sql + ")";
-//    }
-//    console.log(sql);
-//    request.service.mssql.query(sql, [options.lastSyncDate], {
-//        success: function(results) {
-//            for(var i=0;i<results.length;i++) {
-//                options.serverChanges.push(results[i]);
-//            }
-//            console.log(options.serverChanges.length + " server changes in table: " + options.tableName);
-//            var retResults = {
-//                tableName: options.tableName,
-//                changes: options.serverChanges
-//            }
-//            options.success(retResults);
-//        },
-//        error: function(error) {
-//            options.error(error);
-//        }
-//    });
-//    options.success
+    console.log("Processing server changes for table: " + options.tableName);
+    var sql = "select * from stirlingmoney." + options.tableName + " where editDateTime > ?";
+    if(options.processedKeys.length > 0) {
+        sql = sql + " and " + options.idField + " not in (";
+        for(var i=0; i < options.processedKeys.length; i++) {
+            sql = sql + "'" + options.processedKeys[i] + "',"
+        }
+        sql = sql.substr(0, sql.length - 1);
+        sql = sql + ")";
+    }
+    sql = sql + " and userId in (";
+    sql = sql + "'" + options.user.userId + "',";
+    for(var j=0; j<options.userIds.length; j++) {
+        sql = sql + "'" + options.userIds[j] + "',"
+    }
+    sql = sql.substr(0, sql.length - 1);
+    sql = sql + ")";
+    console.log(sql);
+    request.service.mssql.query(sql, [options.lastSyncDate], {
+        success: function(results) {
+            for(var i=0;i<results.length;i++) {
+                options.serverChanges.push(results[i]);
+            }
+            console.log(options.serverChanges.length + " server changes in table: " + options.tableName);
+            var retResults = {
+                tableName: options.tableName,
+                changes: options.serverChanges
+            }
+            options.success(retResults);
+        },
+        error: function(error) {
+            options.error(error);
+        }
+    });
 }
