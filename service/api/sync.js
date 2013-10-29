@@ -226,6 +226,7 @@ function processClientInserts(options, request) {
                 });
             });
         } else {
+            console.log("No records to insert for table %s", options.tableName);
 //                    var serverOptions = {
 //                        tableName: options.tableName,
 //                        idField: options.idField,
