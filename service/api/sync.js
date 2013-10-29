@@ -192,38 +192,54 @@ function processClientInserts(options, request) {
         console.log("Inserting values: %j", options.values);
         var count = 0;
         var table = request.service.tables.getTable(options.tableName);
-        options.values.forEach(function(item) {
-            item.userId = options.user.userId;
-            item.editDateTime = new Date();
-            delete item.id;
-            table.insert(item, {
-                success: function () {
-                    options.processedKeys.push(item[options.idField].toLowerCase());
-                    console.log("Inserted item %j into table: " + options.tableName, item);
-                    options.serverChanges.push(item);
-                    count++;
-                    if(count===options.values.length) {
-    //                    var serverOptions = {
-    //                        tableName: options.tableName,
-    //                        idField: options.idField,
-    //                        user: options.user,
-    //                        userIds: options.userIds,
-    //                        lastSyncDate: options.lastSyncDate,
-    //                        processedKeys: options.processedKeys,
-    //                        serverChanges: options.serverChanges,
-    //                        success: options.success,
-    //                        error: options.error
-    //                    };
-    //                    processServerChanges(serverOptions, request);
-                        options.success({ tableName: options.tableName, changes: options.serverChanges });
+        if(options.values.length > 0) {
+            options.values.forEach(function(item) {
+                item.userId = options.user.userId;
+                item.editDateTime = new Date();
+                delete item.id;
+                table.insert(item, {
+                    success: function () {
+                        options.processedKeys.push(item[options.idField].toLowerCase());
+                        console.log("Inserted item %j into table: " + options.tableName, item);
+                        options.serverChanges.push(item);
+                        count++;
+                        if(count===options.values.length) {
+        //                    var serverOptions = {
+        //                        tableName: options.tableName,
+        //                        idField: options.idField,
+        //                        user: options.user,
+        //                        userIds: options.userIds,
+        //                        lastSyncDate: options.lastSyncDate,
+        //                        processedKeys: options.processedKeys,
+        //                        serverChanges: options.serverChanges,
+        //                        success: options.success,
+        //                        error: options.error
+        //                    };
+        //                    processServerChanges(serverOptions, request);
+                            options.success({ tableName: options.tableName, changes: options.serverChanges });
+                        }
+                    },
+                    error: function(error) {
+                        console.log("Failed to insert item %j into table: %s", [item, options.tableName]);
+                        throw error;
                     }
-                },
-                error: function(error) {
-                    console.log("Failed to insert item %j into table: %s", [item, options.tableName]);
-                    throw error;
-                }
+                });
             });
-        });
+        } else {
+//                    var serverOptions = {
+//                        tableName: options.tableName,
+//                        idField: options.idField,
+//                        user: options.user,
+//                        userIds: options.userIds,
+//                        lastSyncDate: options.lastSyncDate,
+//                        processedKeys: options.processedKeys,
+//                        serverChanges: options.serverChanges,
+//                        success: options.success,
+//                        error: options.error
+//                    };
+//                    processServerChanges(serverOptions, request);
+            options.success({ tableName: options.tableName, changes: options.serverChanges });
+        }
     }
     catch (e) {
         options.error(e);
