@@ -85,12 +85,12 @@ function GetUserAppSyncId(options) {
                          }
                      });
                 } else {
-                    console.log("User %s exists with appSyncId {%s}", [options.email, record.appSyncId]);
+                    console.log("User %s exists with appSyncId {%s}", [options.email, results[0].appSyncId]);
                     options.success(results[0].appSyncId);
                 }
             },
             error: function (error) {
-                console.log("Error retrieving user record %s from AppSyncUsers\n\n\%s", [options.email, error.message]);
+                console.log("Error retrieving user record %s from AppSyncUsers\n\n%s", [options.email, error.message]);
                 options.error(error);
             }
         });
