@@ -70,6 +70,7 @@ function getUserAppSyncId(request, options) {
                     //Insert new user with a new appSyncId GUID
                     var syncIdBytes = uuid.v4();
                     var syncId = uuid.unparse(syncIdBytes);
+                    console.log("syncId: {%s}", syncId);
                     var record = {
                         appSyncId: syncId,
                         userId: options.request.user.userId,
