@@ -13,6 +13,7 @@ exports.post = function (request, response) {
                 !body.email) {
             console.error("Invalid request body: %j", request.body);
             response.send(statusCodes.BAD_REQUEST, {message: "Invalid request body"});
+            return;
         }
 
         GetUserAppSyncId({
