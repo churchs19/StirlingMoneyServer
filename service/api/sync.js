@@ -73,7 +73,7 @@ function getUserAppSyncId(request, options) {
                     console.log("syncId: {%s}", syncId);
                     var record = {
                         appSyncId: syncId,
-                        userId: options.request.user.userId,
+                        userId: request.user.userId,
                         userEmail: options.email,
                         editDateTime: new Date()
                     };
