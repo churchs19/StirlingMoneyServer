@@ -16,7 +16,7 @@ exports.post = function (request, response) {
             return;
         }
 
-        GetUserAppSyncId({
+        getUserAppSyncId(request, {
             email: body.email,
             success: function (appSyncId) {
                 body.items.forEach(function (item) {
@@ -60,8 +60,8 @@ exports.post = function (request, response) {
     }
 };
 
-function GetUserAppSyncId(options) {
-    var table = options.request.service.tables.getTable("AppSyncUsers");
+function getUserAppSyncId(request, options) {
+    var table = request.service.tables.getTable("AppSyncUsers");
     table.where({userEmail : options.email })
         .read({
             success: function (results) {
