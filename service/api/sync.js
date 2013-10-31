@@ -77,6 +77,7 @@ function getUserAppSyncId(request, options) {
                         userEmail: options.email,
                         editDateTime: new Date()
                     };
+                    console.log("record: %j", record);
                     table.insert(record, {
                          success: function () {
                              console.log("Inserted %s into AppSyncUsers with appSyncId {%s}", [options.email, record.appSyncId]);
