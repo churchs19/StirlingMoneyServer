@@ -66,7 +66,7 @@ function getUserAppSyncId(request, options) {
         .read({
             success: function (results) {
                 console.log('%j', results);
-                if(results.length === 0) {
+                if(!results.length) {
                     //Insert new user with a new appSyncId GUID
                     var syncIdBytes = uuid.v4();
                     var syncId = uuid.unparse(syncIdBytes);
