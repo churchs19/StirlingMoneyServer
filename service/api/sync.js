@@ -252,7 +252,7 @@ function processClientInserts(options, request) {
                         }
                     },
                     error: function(error) {
-                        console.log("Failed to insert item %j into table: %s", [item, options.tableName]);
+                        console.log("Failed to insert item %j into table: %s\n\n%s", item, options.tableName, error);
                         throw error;
                     }
                 });
