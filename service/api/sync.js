@@ -76,6 +76,7 @@ function getUserAppSyncId(request, options) {
                         appSyncId: syncId,
                         userId: request.user.userId,
                         userEmail: options.email,
+                        isSyncOwner: true,
                         editDateTime: new Date()
                     };
                     console.log("record: %j", record);
