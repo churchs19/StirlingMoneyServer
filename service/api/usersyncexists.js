@@ -1,11 +1,14 @@
-exports.post = function(request, response) {
-    // Use "request.service" to access features of your mobile service, e.g.:
-    //   var tables = request.service.tables;
-    //   var push = request.service.push;
-
-    response.send(statusCodes.OK, { message : 'Hello World!' });
-};
-
 exports.get = function(request, response) {
-    response.send(statusCodes.OK, { message : 'Hello World!' });
+    var table = request.service.tables.getTable("AppSyncUsers");
+    table.where({userId : request.user.userId })
+        .read({
+            success: function (results) {
+                console.log('%j', results);
+                response.send(statusCodes.OK, { userSyncExists: results.length>0 });
+            },
+            error: function (error) {
+                console.log("Error retrieving user record %s from AppSyncUsers\n\n%s", request.user.userId, error.message);
+                response.send(statusCodes.INTERNAL_SERVER_ERROR)
+            }
+        });    
 };
