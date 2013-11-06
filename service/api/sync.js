@@ -6,7 +6,7 @@ exports.post = function (request, response) {
     //   var tables = request.service.tables;
     //   var push = request.service.push;
     try {
-        console.log("/sync POST with request '%j' by user %s", [request.body, request.user]);
+        console.log("/sync POST with request '%j' by user %s", request.body, request.user);
         var body = request.body, count = 0, results = [];
         if (!body.lastSyncDate ||
                 !body.items ||
@@ -82,28 +82,42 @@ function getUserAppSyncId(request, options) {
                     console.log("record: %j", record);
                     table.insert(record, {
                          success: function () {
-                             console.log("Inserted %s into AppSyncUsers with appSyncId {%s}", [options.email, record.appSyncId]);
+                             console.log("Inserted %s into AppSyncUsers with appSyncId {%s}", options.email, record.appSyncId);
                              options.success(record.appSyncId);
                          },
                          error: function (error) {
-                             console.log("Error inserting %s into AppSyncUsers with appSyncId {%s}\n\n%s", [options.email, record.appSyncId, error.message]);
+                             console.log("Error inserting %s into AppSyncUsers with appSyncId {%s}\n\n%s", options.email, record.appSyncId, error.message);
                              options.error(error);
                          }
                      });
                 } else {
-                    console.log("User %s exists with appSyncId {%s}", [options.email, results[0].appSyncId]);
-                    options.success(results[0].appSyncId);
+                    if(!results[0].userId) {
+                        results[0].userId = request.user.userId;
+                        table.update(results[0], {
+                           success: function() {
+                                console.log("Updated userId for %s with appSyncId {%s}", options.email, results[0].appSyncId);
+                                options.success(results[0].appSyncId);                        
+                           },
+                           error: function (error) {
+                             console.log("Error updating userId for %s in AppSyncUsers with appSyncId {%s}\n\n%s", options.email, record.appSyncId, error.message);
+                             options.error(error);                               
+                           } 
+                        });
+                    } else {
+                        console.log("User %s exists with appSyncId {%s}", options.email, results[0].appSyncId);
+                        options.success(results[0].appSyncId);                        
+                    }
                 }
             },
             error: function (error) {
-                console.log("Error retrieving user record %s from AppSyncUsers\n\n%s", [options.email, error.message]);
+                console.log("Error retrieving user record %s from AppSyncUsers\n\n%s", options.email, error.message);
                 options.error(error);
             }
         });
 }
 
 function processClientChanges(options, request) {
-    console.log("Processing client changes for table: %s", [options.tableName]);
+    console.log("Processing client changes for table: %s", options.tableName);
     var serverChanges = [], serverKeys = [], table = request.service.tables.getTable(options.tableName);
     if (options.values.length > 0) {
         var valuesEnum = Enumerable.From(options.values);
