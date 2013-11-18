@@ -144,8 +144,9 @@ function processClientChanges(options, request) {
                             }).FirstOrDefault(null);
                             if(clientVal && item.editDateTime < clientVal.editDateTime) {
                                 //Update the server entry
-                                item.appSyncId = options.appSyncId;
-                                table.update(item, {
+                                clientVal.appSyncId = options.appSyncId;
+                                clientVal.id = item.id;
+                                table.update(clientVal, {
                                     success: function () {
                                         console.log("Updated record {" + item[options.idField] + "} in " + options.tableName);
                                         count++;
