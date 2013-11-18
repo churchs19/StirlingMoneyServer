@@ -6,7 +6,7 @@ exports.post = function (request, response) {
     //   var tables = request.service.tables;
     //   var push = request.service.push;
     try {
-        console.log("/sync POST with request '%j' by user %s", request.body, request.user);
+//        console.log("/sync POST with request '%j' by user %s", request.body, request.user);
         var body = request.body, count = 0, results = [];
         if (!body.lastSyncDate ||
                 !body.items ||
@@ -65,13 +65,13 @@ function getUserAppSyncId(request, options) {
     table.where({userEmail : options.email })
         .read({
             success: function (results) {
-                console.log('%j', results);
+//                console.log('%j', results);
                 if(results.length === 0) {
                     //Insert new user with a new appSyncId GUID
                     var buffer = new Buffer(16);
                     var syncIdBytes = uuid.v4({rng: uuid.nodeRNG}, buffer, 0);
                     var syncId = uuid.unparse(syncIdBytes);
-                    console.log("syncId: {%s}", syncId);
+//                    console.log("syncId: {%s}", syncId);
                     var record = {
                         appSyncId: syncId,
                         userId: request.user.userId,
@@ -79,7 +79,7 @@ function getUserAppSyncId(request, options) {
                         isSyncOwner: true,
                         editDateTime: new Date()
                     };
-                    console.log("record: %j", record);
+//                    console.log("record: %j", record);
                     table.insert(record, {
                          success: function () {
                              console.log("Inserted %s into AppSyncUsers with appSyncId {%s}", options.email, record.appSyncId);
@@ -95,29 +95,29 @@ function getUserAppSyncId(request, options) {
                         results[0].userId = request.user.userId;
                         table.update(results[0], {
                            success: function() {
-                                console.log("Updated userId for %s with appSyncId {%s}", options.email, results[0].appSyncId);
+//                                console.log("Updated userId for %s with appSyncId {%s}", options.email, results[0].appSyncId);
                                 options.success(results[0].appSyncId);                        
                            },
                            error: function (error) {
-                             console.log("Error updating userId for %s in AppSyncUsers with appSyncId {%s}\n\n%s", options.email, record.appSyncId, error.message);
+                             console.error("Error updating userId for %s in AppSyncUsers with appSyncId {%s}\n\n%s", options.email, record.appSyncId, error.message);
                              options.error(error);                               
                            } 
                         });
                     } else {
-                        console.log("User %s exists with appSyncId {%s}", options.email, results[0].appSyncId);
+//                        console.log("User %s exists with appSyncId {%s}", options.email, results[0].appSyncId);
                         options.success(results[0].appSyncId);                        
                     }
                 }
             },
             error: function (error) {
-                console.log("Error retrieving user record %s from AppSyncUsers\n\n%s", options.email, error.message);
+                console.error("Error retrieving user record %s from AppSyncUsers\n\n%s", options.email, error.message);
                 options.error(error);
             }
         });
 }
 
 function processClientChanges(options, request) {
-    console.log("Processing client changes for table: %s", options.tableName);
+//    console.log("Processing client changes for table: %s", options.tableName);
     var serverChanges = [], serverKeys = [], table = request.service.tables.getTable(options.tableName);
     if (options.values.length > 0) {
         var valuesEnum = Enumerable.From(options.values);
@@ -127,10 +127,10 @@ function processClientChanges(options, request) {
         }
         sql = sql.substr(0, sql.length - 1);
         sql = sql + ")";
-        console.log(sql);
+//        console.log(sql);
         request.service.mssql.query(sql, {
             success: function(results) {
-                console.log(results.length + " results matching client keys in " + options.tableName);
+//                console.log(results.length + " results matching client keys in " + options.tableName);
                 var count = 0;
                 if(results.length > 0) {
                     results.forEach(function(item) {
@@ -142,16 +142,16 @@ function processClientChanges(options, request) {
                             var clientVal = valuesEnum.Where(function(it) {
                                 return it[options.idField].toLowerCase() === item[options.idField].toLowerCase();
                             }).FirstOrDefault(null);
-                            console.log("Record {" + clientVal[options.idField] + "} in " + options.tableName + "has server update time: " + item.editDateTime + " and client update time: " + new Date(clientVal.editDateTime));
+//                            console.log("Record {" + clientVal[options.idField] + "} in " + options.tableName + "has server update time: " + item.editDateTime + " and client update time: " + new Date(clientVal.editDateTime));
                             if(clientVal && item.editDateTime < new Date(clientVal.editDateTime)) {
                                 //Update the server entry
-                                console.log("Updating Server Entry");
+//                                console.log("Updating Server Entry");
                                 clientVal.appSyncId = options.appSyncId;
                                 clientVal.id = item.id;
-                                console.log("ClientValue: %j", clientVal);
+//                                console.log("ClientValue: %j", clientVal);
                                 table.update(clientVal, {
                                     success: function () {
-                                        console.log("Updated record {" + clientVal[options.idField] + "} in " + options.tableName);
+//                                        console.log("Updated record {" + clientVal[options.idField] + "} in " + options.tableName);
                                         count++;
                                         if(count===results.length) {
                                             var serverEnum = Enumerable.From(serverKeys);
@@ -176,12 +176,12 @@ function processClientChanges(options, request) {
                                     }
                                 });
                             } else {
-                                console.log("Server value newer than client value");
+//                                console.log("Server value newer than client value");
                                 serverChanges.push(item);
                                 count++;
                                 if(count===results.length) {
                                     var serverEnum = Enumerable.From(serverKeys);
-                                    var insertValues = valuesEnum.Where(function(it) { return !serverEnum.Contains(it[options.idField].toLowerCase()); }).ToArray();
+                                    var insertValues = valuesEnum.Where(function(it) { return !serverEnum.Contains(it[options.idField].toLowerCase()) && !it.isDeleted; }).ToArray();
                                     var insertOptions = {
                                         tableName: options.tableName,
                                         idField: options.idField,
@@ -201,7 +201,7 @@ function processClientChanges(options, request) {
                 } else {
                     //No matching records from server - only client inserts
                     var serverEnum = Enumerable.From(serverKeys);
-                    var insertValues = valuesEnum.Where(function(it) { return !serverEnum.Contains(it[options.idField].toLowerCase()); }).ToArray();
+                    var insertValues = valuesEnum.Where(function(it) { return !serverEnum.Contains(it[options.idField].toLowerCase()) && !it.isDeleted; }).ToArray();
                     var insertOptions = {
                         tableName: options.tableName,
                         idField: options.idField,
@@ -217,7 +217,7 @@ function processClientChanges(options, request) {
                 }
             },
             error: function(error) {
-                console.log("Error processing update sql query: %s", sql);
+                console.error("Error processing update sql query: %s", sql);
                 throw error;
             }
         });
@@ -248,7 +248,7 @@ function processClientInserts(options, request) {
             table.insert(item, {
                 success: function () {
                     options.processedKeys.push(item[options.idField].toLowerCase());
-                    console.log("Inserted item %j into table: " + options.tableName, item);
+//                    console.log("Inserted item %j into table: " + options.tableName, item);
                     options.serverChanges.push(item);
                     count++;
                     if(count===options.values.length) {
@@ -266,13 +266,13 @@ function processClientInserts(options, request) {
                     }
                 },
                 error: function(error) {
-                    console.log("Failed to insert item %j into table: %s\n\n%s", item, options.tableName, error);
+                    console.error("Failed to insert item %j into table: %s\n\n%s", item, options.tableName, error);
                     throw error;
                 }
             });
         });
     } else {
-        console.log("No records to insert for table %s", options.tableName);
+//        console.log("No records to insert for table %s", options.tableName);
         var serverOptions = {
             tableName: options.tableName,
             idField: options.idField,
@@ -288,7 +288,7 @@ function processClientInserts(options, request) {
 }
 
 function processServerChanges(options, request) {
-    console.log("Processing server changes for table: " + options.tableName);
+//    console.log("Processing server changes for table: " + options.tableName);
     var sql = "select * from stirlingmoney." + options.tableName + " where editDateTime > ?";
     if(options.processedKeys.length > 0) {
         sql = sql + " and " + options.idField + " not in (";
@@ -299,13 +299,13 @@ function processServerChanges(options, request) {
         sql = sql + ")";
     }
     sql = sql + " and appSyncId = ?"
-    console.log(sql);
+//    console.log(sql);
     request.service.mssql.query(sql, [options.lastSyncDate, options.appSyncId], {
         success: function(results) {
             for(var i=0;i<results.length;i++) {
                 options.serverChanges.push(results[i]);
             }
-            console.log(options.serverChanges.length + " server changes in table: " + options.tableName);
+//            console.log(options.serverChanges.length + " server changes in table: " + options.tableName);
             var retResults = {
                 tableName: options.tableName,
                 changes: options.serverChanges
