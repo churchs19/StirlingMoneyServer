@@ -167,6 +167,7 @@ function processClientChanges(options, request) {
                                         }
                                     },
                                     error: function(error) {
+                                        console.error(error);
                                         throw error;
                                     }
                                 });
