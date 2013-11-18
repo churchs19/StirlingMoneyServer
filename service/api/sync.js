@@ -145,8 +145,10 @@ function processClientChanges(options, request) {
                             console.log("Record {" + clientVal[options.idField] + "} in " + options.tableName + "has server update time: " + item.editDateTime + " and client update time: " + new Date(clientVal.editDateTime));
                             if(clientVal && item.editDateTime < new Date(clientVal.editDateTime)) {
                                 //Update the server entry
+                                console.log("Updating Server Entry");
                                 clientVal.appSyncId = options.appSyncId;
                                 clientVal.id = item.id;
+                                console.log("ClientValue: %j", clientVal);
                                 table.update(clientVal, {
                                     success: function () {
                                         console.log("Updated record {" + clientVal[options.idField] + "} in " + options.tableName);
