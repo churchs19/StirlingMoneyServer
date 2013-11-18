@@ -142,6 +142,7 @@ function processClientChanges(options, request) {
                             var clientVal = valuesEnum.Where(function(it) {
                                 return it[options.idField].toLowerCase() === item[options.idField].toLowerCase();
                             }).FirstOrDefault(null);
+                            console.log("Record {" + clientVal[options.idField] + "} in " + options.tableName + "has server update time: " + item.editDateTime + " and client update time: " + clientVal.editDateTime);
                             if(clientVal && item.editDateTime < clientVal.editDateTime) {
                                 //Update the server entry
                                 clientVal.appSyncId = options.appSyncId;
