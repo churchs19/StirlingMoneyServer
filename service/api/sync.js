@@ -148,7 +148,7 @@ function processClientChanges(options, request) {
                                 clientVal.id = item.id;
                                 table.update(clientVal, {
                                     success: function () {
-                                        console.log("Updated record {" + item[options.idField] + "} in " + options.tableName);
+                                        console.log("Updated record {" + clientVal[options.idField] + "} in " + options.tableName);
                                         count++;
                                         if(count===results.length) {
                                             var serverEnum = Enumerable.From(serverKeys);
