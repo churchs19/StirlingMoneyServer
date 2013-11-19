@@ -52,6 +52,7 @@ exports.post = function (request, response) {
         });
     } catch (e) {
         if (e.statusCode) {
+            console.error(e.StatusCode + ": " + e.error);
             response.send(e.statusCode, {message:e.error});
         } else {
             console.error("Unhandled Exception: " + e);
