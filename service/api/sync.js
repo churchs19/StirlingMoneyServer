@@ -6,12 +6,12 @@ exports.post = function (request, response) {
     //   var tables = request.service.tables;
     //   var push = request.service.push;
     try {
-        console.log("/sync POST with request '%j' by user %s", request.body, request.user);
+        console.log("%s: /sync POST with request '%j' by user %s", new Date(), request.body, request.user);
         var body = request.body, count = 0, results = [];
         if (!body.lastSyncDate ||
                 !body.items ||
                 !body.email) {
-            console.error("Invalid request body: %j", request.body);
+            console.error("%s: Invalid request body: %j", new Date(), request.body);
             response.send(statusCodes.BAD_REQUEST, {message: "Invalid request body"});
             return;
         }
@@ -35,7 +35,7 @@ exports.post = function (request, response) {
                             }
                         },
                         error: function (error, statusCode) {
-                            console.error("Error occurred processing request '%j' from user '%j':\n\n" + error, request.body, request.user);
+                            console.error("%s: Error occurred processing request '%j' from user '%j':\n\n" + error, new Date(), request.body, request.user);
                             if (!statusCode) {
                                 throw { statusCode: statusCodes.INTERNAL_SERVER_ERROR, error: error };
                             } else {
@@ -52,10 +52,10 @@ exports.post = function (request, response) {
         });
     } catch (e) {
         if (e.statusCode) {
-            console.error(e.StatusCode + ": " + e.error);
+            console.error("%s: %s : %s", new Date(), e.StatusCode , e.error);
             response.send(e.statusCode, {message:e.error});
         } else {
-            console.error("Unhandled Exception: " + e);
+            console.error("%s: Unhandled Exception: " + e, new Date());
             response.send(statusCodes.INTERNAL_SERVER_ERROR, {message : e});
         }
     }
@@ -83,12 +83,12 @@ function getUserAppSyncId(request, options) {
 //                    console.log("record: %j", record);
                     table.insert(record, {
                          success: function () {
-                             console.log("Inserted %s into AppSyncUsers with appSyncId {%s}", options.email, record.appSyncId);
+                             console.log("%s: Inserted %s into AppSyncUsers with appSyncId {%s}", new Date(), options.email, record.appSyncId);
                              options.success(record.appSyncId);
                              return;
                          },
                          error: function (error) {
-                             console.log("Error inserting %s into AppSyncUsers with appSyncId {%s}\n\n%s", options.email, record.appSyncId, error.message);
+                             console.log("%s: Error inserting %s into AppSyncUsers with appSyncId {%s}\n\n%s", new Date(), options.email, record.appSyncId, error.message);
                              throw error;
                          }
                      });
@@ -102,7 +102,7 @@ function getUserAppSyncId(request, options) {
                                 return;                       
                            },
                            error: function (error) {
-                             console.error("Error updating userId for %s in AppSyncUsers with appSyncId {%s}\n\n%s", options.email, record.appSyncId, error.message);
+                             console.error("%s: Error updating userId for %s in AppSyncUsers with appSyncId {%s}\n\n%s", new Date(), options.email, record.appSyncId, error.message);
                              throw error;                               
                            } 
                         });
@@ -114,14 +114,14 @@ function getUserAppSyncId(request, options) {
                 }
             },
             error: function (error) {
-                console.error("Error retrieving user record %s from AppSyncUsers\n\n%s", options.email, error.message);
+                console.error("%s: Error retrieving user record %s from AppSyncUsers\n\n%s", new Date(), options.email, error.message);
                 throw error;
             }
         });
 }
 
 function processClientChanges(options, request) {
-    console.log("Processing client changes for table: %s", options.tableName);
+    console.log("%s: Processing client changes for table: %s", new Date(), options.tableName);
     var serverChanges = [], serverKeys = [], table = request.service.tables.getTable(options.tableName);
     if (options.values.length > 0) {
         var valuesEnum = Enumerable.From(options.values);
@@ -139,7 +139,7 @@ function processClientChanges(options, request) {
                     results.forEach(function(item) {
                         serverKeys.push(item[options.idField].toLowerCase());
                         if(item.appSyncId !== options.appSyncId) {
-                            console.error("User %j made an unauthorized attempt to edit record {" + item[options.idField] + "} in table " + options.tableName, options.user);
+                            console.error("%s: User %j made an unauthorized attempt to edit record {" + item[options.idField] + "} in table " + options.tableName, new Date(), options.user);
                             throw { error: new Error("Attempt made to edit unauthorized record"), statusCode: statusCodes.UNAUTHORIZED};
                         } else {
                             var clientVal = valuesEnum.Where(function(it) {
@@ -154,15 +154,15 @@ function processClientChanges(options, request) {
 //                                console.log("ClientValue: %j", clientVal);
                                 table.update(clientVal, {
                                     success: function () {
-                                        console.log("Updated record {" + clientVal[options.idField] + "} in " + options.tableName);
+                                        console.log("%s: Updated record {" + clientVal[options.idField] + "} in " + options.tableName, new Date());
                                     },
                                     error: function(error) {
-                                        console.error(error);
+                                        console.error("%s: %s", new Date(), error);
                                         throw error;
                                     }
                                 });
                             } else {
-                                console.log("Server value newer than client value");
+                                console.log("%s: Server value newer than client value", new Date());
                                 serverChanges.push(item);
                             }
                         }
@@ -170,7 +170,7 @@ function processClientChanges(options, request) {
                 }
             },
             error: function(error) {
-                console.error("Error processing update sql query: %s", sql);
+                console.error("%s: Error processing update sql query: %s", new Date(), sql);
                 throw error;
             }
         });
@@ -218,13 +218,13 @@ function processClientInserts(options, request) {
                     options.serverChanges.push(item);
                 },
                 error: function(error) {
-                    console.error("Failed to insert item %j into table: %s\n\n%s", item, options.tableName, error);
+                    console.error("%s: Failed to insert item %j into table: %s\n\n%s", new Date(), item, options.tableName, error);
                     throw error;
                 }
             });
         });
     } else {
-        console.log("No records to insert for table %s", options.tableName);
+        console.log("%s: No records to insert for table %s", new Date(), options.tableName);
     }
     var serverOptions = {
         tableName: options.tableName,
