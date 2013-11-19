@@ -168,26 +168,26 @@ function processClientChanges(options, request) {
                         }
                     });
                 }
-                var serverEnum = Enumerable.From(serverKeys);
-                var insertValues = valuesEnum.Where(function(it) { return !serverEnum.Contains(it[options.idField].toLowerCase()); }).ToArray();
-                var insertOptions = {
-                    tableName: options.tableName,
-                    idField: options.idField,
-                    appSyncId: options.appSyncId,
-                    values: insertValues,
-                    lastSyncDate: options.lastSyncDate,
-                    processedKeys: serverKeys,
-                    serverChanges: serverChanges,
-                    success: options.success,
-                    error: options.error
-                };
-                processClientInserts(insertOptions, request);
             },
             error: function(error) {
                 console.error("Error processing update sql query: %s", sql);
                 throw error;
             }
         });
+        var serverEnum = Enumerable.From(serverKeys);
+        var insertValues = valuesEnum.Where(function(it) { return !serverEnum.Contains(it[options.idField].toLowerCase()); }).ToArray();
+        var insertOptions = {
+            tableName: options.tableName,
+            idField: options.idField,
+            appSyncId: options.appSyncId,
+            values: insertValues,
+            lastSyncDate: options.lastSyncDate,
+            processedKeys: serverKeys,
+            serverChanges: serverChanges,
+            success: options.success,
+            error: options.error
+        };
+        processClientInserts(insertOptions, request);
     } else {
         //No client changes
         var serverOptions = {
@@ -205,7 +205,6 @@ function processClientChanges(options, request) {
 }
 
 function processClientInserts(options, request) {
-    var count = 0;
     var table = request.service.tables.getTable(options.tableName);
     if(options.values.length > 0) {
         options.values.forEach(function(item) {
@@ -217,20 +216,6 @@ function processClientInserts(options, request) {
                     options.processedKeys.push(item[options.idField].toLowerCase());
 //                    console.log("Inserted item %j into table: " + options.tableName, item);
                     options.serverChanges.push(item);
-                    count++;
-                    if(count===options.values.length) {
-                        var serverOptions = {
-                            tableName: options.tableName,
-                            idField: options.idField,
-                            appSyncId: options.appSyncId,
-                            lastSyncDate: options.lastSyncDate,
-                            processedKeys: options.processedKeys,
-                            serverChanges: options.serverChanges,
-                            success: options.success,
-                            error: options.error
-                        };
-                        processServerChanges(serverOptions, request);
-                    }
                 },
                 error: function(error) {
                     console.error("Failed to insert item %j into table: %s\n\n%s", item, options.tableName, error);
@@ -239,19 +224,19 @@ function processClientInserts(options, request) {
             });
         });
     } else {
-//        console.log("No records to insert for table %s", options.tableName);
-        var serverOptions = {
-            tableName: options.tableName,
-            idField: options.idField,
-            appSyncId: options.appSyncId,
-            lastSyncDate: options.lastSyncDate,
-            processedKeys: options.processedKeys,
-            serverChanges: options.serverChanges,
-            success: options.success,
-            error: options.error
-        };
-        processServerChanges(serverOptions, request);
+        console.log("No records to insert for table %s", options.tableName);
     }
+    var serverOptions = {
+        tableName: options.tableName,
+        idField: options.idField,
+        appSyncId: options.appSyncId,
+        lastSyncDate: options.lastSyncDate,
+        processedKeys: options.processedKeys,
+        serverChanges: options.serverChanges,
+        success: options.success,
+        error: options.error
+    };
+    processServerChanges(serverOptions, request);
 }
 
 function processServerChanges(options, request) {
