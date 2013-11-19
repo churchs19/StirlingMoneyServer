@@ -6,7 +6,7 @@ exports.post = function (request, response) {
     //   var tables = request.service.tables;
     //   var push = request.service.push;
     try {
-//        console.log("/sync POST with request '%j' by user %s", request.body, request.user);
+        console.log("/sync POST with request '%j' by user %s", request.body, request.user);
         var body = request.body, count = 0, results = [];
         if (!body.lastSyncDate ||
                 !body.items ||
@@ -84,10 +84,11 @@ function getUserAppSyncId(request, options) {
                          success: function () {
                              console.log("Inserted %s into AppSyncUsers with appSyncId {%s}", options.email, record.appSyncId);
                              options.success(record.appSyncId);
+                             return;
                          },
                          error: function (error) {
                              console.log("Error inserting %s into AppSyncUsers with appSyncId {%s}\n\n%s", options.email, record.appSyncId, error.message);
-                             options.error(error);
+                             throw error;
                          }
                      });
                 } else {
@@ -96,28 +97,30 @@ function getUserAppSyncId(request, options) {
                         table.update(results[0], {
                            success: function() {
 //                                console.log("Updated userId for %s with appSyncId {%s}", options.email, results[0].appSyncId);
-                                options.success(results[0].appSyncId);                        
+                                options.success(results[0].appSyncId); 
+                                return;                       
                            },
                            error: function (error) {
                              console.error("Error updating userId for %s in AppSyncUsers with appSyncId {%s}\n\n%s", options.email, record.appSyncId, error.message);
-                             options.error(error);                               
+                             throw error;                               
                            } 
                         });
                     } else {
 //                        console.log("User %s exists with appSyncId {%s}", options.email, results[0].appSyncId);
-                        options.success(results[0].appSyncId);                        
+                        options.success(results[0].appSyncId);  
+                        return;                      
                     }
                 }
             },
             error: function (error) {
                 console.error("Error retrieving user record %s from AppSyncUsers\n\n%s", options.email, error.message);
-                options.error(error);
+                throw error;
             }
         });
 }
 
 function processClientChanges(options, request) {
-//    console.log("Processing client changes for table: %s", options.tableName);
+    console.log("Processing client changes for table: %s", options.tableName);
     var serverChanges = [], serverKeys = [], table = request.service.tables.getTable(options.tableName);
     if (options.values.length > 0) {
         var valuesEnum = Enumerable.From(options.values);
@@ -131,7 +134,6 @@ function processClientChanges(options, request) {
         request.service.mssql.query(sql, {
             success: function(results) {
 //                console.log(results.length + " results matching client keys in " + options.tableName);
-                var count = 0;
                 if(results.length > 0) {
                     results.forEach(function(item) {
                         serverKeys.push(item[options.idField].toLowerCase());
@@ -151,24 +153,7 @@ function processClientChanges(options, request) {
 //                                console.log("ClientValue: %j", clientVal);
                                 table.update(clientVal, {
                                     success: function () {
-//                                        console.log("Updated record {" + clientVal[options.idField] + "} in " + options.tableName);
-                                        count++;
-                                        if(count===results.length) {
-                                            var serverEnum = Enumerable.From(serverKeys);
-                                            var insertValues = valuesEnum.Where(function(it) { return !serverEnum.Contains(it[options.idField].toLowerCase()); }).ToArray();
-                                            var insertOptions = {
-                                                tableName: options.tableName,
-                                                idField: options.idField,
-                                                appSyncId: options.appSyncId,
-                                                values: insertValues,
-                                                lastSyncDate: options.lastSyncDate,
-                                                processedKeys: serverKeys,
-                                                serverChanges: serverChanges,
-                                                success: options.success,
-                                                error: options.error
-                                            };
-                                            processClientInserts(insertOptions, request);
-                                        }
+                                        console.log("Updated record {" + clientVal[options.idField] + "} in " + options.tableName);
                                     },
                                     error: function(error) {
                                         console.error(error);
@@ -176,45 +161,26 @@ function processClientChanges(options, request) {
                                     }
                                 });
                             } else {
-//                                console.log("Server value newer than client value");
+                                console.log("Server value newer than client value");
                                 serverChanges.push(item);
-                                count++;
-                                if(count===results.length) {
-                                    var serverEnum = Enumerable.From(serverKeys);
-                                    var insertValues = valuesEnum.Where(function(it) { return !serverEnum.Contains(it[options.idField].toLowerCase()) && !it.isDeleted; }).ToArray();
-                                    var insertOptions = {
-                                        tableName: options.tableName,
-                                        idField: options.idField,
-                                        appSyncId: options.appSyncId,
-                                        values: insertValues,
-                                        lastSyncDate: options.lastSyncDate,
-                                        processedKeys: serverKeys,
-                                        serverChanges: serverChanges,
-                                        success: options.success,
-                                        error: options.error
-                                    };
-                                    processClientInserts(insertOptions, request);
-                                }
                             }
                         }
                     });
-                } else {
-                    //No matching records from server - only client inserts
-                    var serverEnum = Enumerable.From(serverKeys);
-                    var insertValues = valuesEnum.Where(function(it) { return !serverEnum.Contains(it[options.idField].toLowerCase()) && !it.isDeleted; }).ToArray();
-                    var insertOptions = {
-                        tableName: options.tableName,
-                        idField: options.idField,
-                        appSyncId: options.appSyncId,
-                        values: insertValues,
-                        lastSyncDate: options.lastSyncDate,
-                        processedKeys: serverKeys,
-                        serverChanges: serverChanges,
-                        success: options.success,
-                        error: options.error
-                    };
-                    processClientInserts(insertOptions, request);
                 }
+                var serverEnum = Enumerable.From(serverKeys);
+                var insertValues = valuesEnum.Where(function(it) { return !serverEnum.Contains(it[options.idField].toLowerCase()); }).ToArray();
+                var insertOptions = {
+                    tableName: options.tableName,
+                    idField: options.idField,
+                    appSyncId: options.appSyncId,
+                    values: insertValues,
+                    lastSyncDate: options.lastSyncDate,
+                    processedKeys: serverKeys,
+                    serverChanges: serverChanges,
+                    success: options.success,
+                    error: options.error
+                };
+                processClientInserts(insertOptions, request);
             },
             error: function(error) {
                 console.error("Error processing update sql query: %s", sql);
