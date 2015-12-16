@@ -1,0 +1,6 @@
+node_modules
+*.dat
+*.suo
+bin
+obj
+azureMobile.js

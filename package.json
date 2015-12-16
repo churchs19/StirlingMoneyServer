@@ -1,0 +1,12 @@
+{
+    "name": "stirling-money-server",
+    "version": "2.0.0",
+    "description": "Stirling Money Server - Azure Mobile Apps",
+    "main": "app.js",
+    "author": "Shane Church <shane@s-church.net>",
+    "license": "ISC",
+    "dependencies": {
+        "azure-mobile-apps": "^2.0.0-beta1",
+        "express": "^4.13.3"
+    }
+}
